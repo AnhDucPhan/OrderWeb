@@ -48,6 +48,7 @@ $lg: 1024px;
   padding: 0 25px;
   text-align: center;
   cursor: pointer;
+
   &:hover {
     color: #C19D56;
   }
@@ -72,16 +73,18 @@ $lg: 1024px;
     height: 8px;
     border-radius: 50%;
     opacity: 0;
-    background: linear-gradient(
-      to left,             /* hướng nhạt từ phải → trái */
-      #C19D56 0%,          /* đậm bên phải */
-      rgba(193, 157, 86, 0) 100% /* trong suốt bên trái */
-    );
+    background: linear-gradient(to left,
+        /* hướng nhạt từ phải → trái */
+        #C19D56 0%,
+        /* đậm bên phải */
+        rgba(193, 157, 86, 0) 100%
+        /* trong suốt bên trái */
+      );
     transition: opacity 0.4s ease;
   }
 
   &:hover {
-    padding-left: 20px; 
+    padding-left: 20px;
     color: #C19D56;
   }
 
@@ -89,6 +92,7 @@ $lg: 1024px;
     opacity: 1;
   }
 }
+
 .arrow-icon {
   transition: transform 0.3s ease;
 
@@ -103,6 +107,7 @@ $lg: 1024px;
     transform: translateY(-100%);
     opacity: 0;
   }
+
   100% {
     transform: translateY(0);
     opacity: 1;

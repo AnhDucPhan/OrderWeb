@@ -11,6 +11,33 @@ import { IoIosArrowDown } from "react-icons/io";
 
 const Header = () => {
     const [openModalSearch, setOpenModalSearch] = useState(false)
+    const menuItems = [
+        {
+            image: "/images/Menu-1.jpg", // thư mục public/images
+            title: "Blended Ice Cream"
+        },
+        {
+            image: "/images/Store-2.jpg",
+            title: "Cappuccino"
+        },
+        {
+            image: "/images/store-3.jpg",
+            title: "Chocolate Coffee"
+        },
+        {
+            image: "/images/store-4.jpg",
+            title: "Blender Coffee"
+        },
+        {
+            image: "/images/store-5.jpg",
+            title: "Packaged"
+        },
+        {
+            image: "/images/Menu-1.jpg",
+            title: "Americano"
+        },
+    ];
+
     return (
         <header className="bg-[#07100B] px-[30px] py-0 w-full relative h-[60px] sm:h-[80px] lg:h-[100px] flex items-center justify-between font-text-header font-dm">
 
@@ -23,14 +50,50 @@ const Header = () => {
                 />
             </div>
             <div>
-                <nav className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
+                <nav className="flex justify-center">
                     <ul className="grid grid-cols-5 gap-1 text-center">
-                        <li className="header-center relative group">
-                            <span className="hover:text-[#C19D56]">
-                                Menu
+                        <li className="header-center relative group cursor-pointer">
+                            {/* Text Menu */}
+                            <span className="flex items-center gap-1 hover:text-[#C19D56]">
+                                News
+                                <IoIosArrowDown className="transition-transform duration-300 group-hover:rotate-180" />
                             </span>
-                            <IoIosArrowDown />
+
+                            {/* Modal */}
+                            <div className="fixed top-[100px] left-1/2 -translate-x-1/2 w-[90vw] max-w-[1200px] bg-white shadow-lg p-6 rounded-lg
+      opacity-0 translate-y-4 invisible
+      group-hover:opacity-100 group-hover:translate-y-0 group-hover:visible
+      transition-all duration-500 ease-out z-50">
+
+                                <div className="grid grid-cols-6 text-center gap-2">
+                                    {menuItems.map((item, idx) => (
+                                        <div key={idx} className="flex flex-col items-center cursor-pointer group transition-transform duration-300 hover:scale-105">
+                                            <div className="w-full relative">
+                                                <Image
+                                                    src={item.image}
+                                                    alt={item.title}
+                                                    width={300}
+                                                    height={200}
+                                                    className="object-contain rounded-none transition-transform duration-300 group-hover:scale-105"
+                                                />
+                                            </div>
+
+                                            {/* Title */}
+                                            <span className="mt-2 text-black font-semibold transition-colors group-hover:text-[#C19D56]">
+                                                {item.title}
+                                            </span>
+                                        </div>
+
+                                    ))}
+                                </div>
+                            </div>
                         </li>
+
+
+
+
+
+
                         <li className="header-center relative group">
                             <span className="hover:text-[#C19D56]">About Us</span>
                             <IoIosArrowDown />
@@ -167,12 +230,7 @@ const Header = () => {
 
                             {/* Khối modal */}
                             <div
-                                className={`
-          w-full h-[50vh] bg-[#86624A] 
-          absolute top-0 left-0 
-          flex flex-col items-center justify-center relative
-          animate-slide-down
-        `}
+                                className={`w-full h-[50vh] bg-[#86624A] absolute top-0 left-0 flex flex-col items-center justify-center relative animate-slide-down`}
                             >
                                 {/* Nút đóng */}
                                 <button
@@ -200,7 +258,6 @@ const Header = () => {
                         </div>
                     )}
                 </div>
-
 
                 <div className="rounded-full bg-[#C19D56] 
                 w-10 h-10 sm:w-14 sm:h-14 lg:w-14 lg:h-14 
