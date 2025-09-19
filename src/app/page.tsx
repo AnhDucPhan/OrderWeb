@@ -1,9 +1,12 @@
-import Header from "../component/header";
+import HomePageBackGround from "@/component/componentHomePage/homePageBackGround";
+import AboutUs from "@/component/componentHomePage/aboutUsHomePage";
 
 export default function Page() {
   return (
-    <div>
-      <Header/>
-    </div>
+    <>
+      <HomePageBackGround />
+      <AboutUs/>
+    </>
   )
+
 }
