@@ -122,3 +122,60 @@ body {
   animation: slide-down 0.5s ease-out forwards;
 }
 
+/* Nhấp nhô nhẹ */
+.bounceY {
+  animation: bounceY 3s ease-in-out infinite;
+}
+
+@keyframes bounceY {
+
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+
+  50% {
+    transform: translateY(-5px);
+  }
+
+  /* Nhấp nhô nhẹ hơn */
+}
+
+/* Text stroke nhỏ */
+.text-stroke-small {
+  color: transparent;
+  /* text trong suốt */
+  -webkit-text-stroke-width: 1.5px;
+  -webkit-text-stroke-color: #C19D56;
+  stroke-width: 1.5px;
+  stroke: #C19D56;
+  font-size: 100px;
+  /* nhỏ đi 1 nửa */
+  font-weight: 400px;
+  text-align: left;
+  font-family: Marcellus;
+}
+
+.check {
+  background-color: #F0E9E3;
+  margin: 0px 0px 0px 0px;
+  padding: 19px 17px 14px 17px;
+  border-radius: 30px 30px 50px 50px;
+  text-align: center;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+@keyframes spin-slow {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.spin-slow {
+  animation: spin-slow 12s linear infinite;
+}

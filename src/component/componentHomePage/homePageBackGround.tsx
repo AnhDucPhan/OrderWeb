@@ -28,7 +28,7 @@ const HomePageBackGround = () => {
                             COFFEE AND TEA
                         </span>
                         <h1 className="mt-4 text-5xl md:text-7xl text-gray-200 drop-shadow">
-                            Boost Your Online Presence Today!
+                            Awaken Your Taste Buds Today!
                         </h1>
                         <span className="mt-4 text-lg md:text-3xl text-gray-200 drop-shadow">
                             Let's transform your online potential into measurable growth
