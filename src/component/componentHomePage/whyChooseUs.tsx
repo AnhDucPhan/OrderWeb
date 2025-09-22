@@ -12,7 +12,7 @@ const WhyChooseUs = () => {
                     WHY CHOOSE US
                 </span>
 
-                <h2 className="font-marcellus mt-4 text-3xl sm:text-4xl md:text-5xl lg:text-6xl text-black leading-snug">
+                <h2 className="font-marcellus leading-[62px] tracking-[-1px] mt-4 text-3xl sm:text-4xl md:text-5xl lg:text-6xl text-black leading-snug">
                     Crafting Moments, One Brew at a Time
                 </h2>
 
@@ -85,7 +85,6 @@ const WhyChooseUs = () => {
 
 
         </section>
-
 
     )
 }

@@ -179,3 +179,23 @@ body {
 .spin-slow {
   animation: spin-slow 12s linear infinite;
 }
+
+//animation list expert homepage
+@keyframes scroll-step {
+  0% { transform: translateX(0); }
+  10% { transform: translateX(-28.57%); }
+  20% { transform: translateX(-28.57%); }
+  30% { transform: translateX(-57.14%); }
+  40% { transform: translateX(-57.14%); }
+  50% { transform: translateX(-85.71%); }
+  60% { transform: translateX(-85.71%); }
+  70% { transform: translateX(-114.28%); }
+  80% { transform: translateX(-114.28%); }
+  90% { transform: translateX(-142.85%); }
+  100% { transform: translateX(0); }
+}
+
+.animate-scroll-step {
+  animation: scroll-step 15s linear infinite;
+}
+
