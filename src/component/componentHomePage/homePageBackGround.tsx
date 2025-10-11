@@ -4,9 +4,9 @@ import Header from "./header"
 const HomePageBackGround = () => {
     return (
         <div className="relative">
-            <div className="absolute top-0 left-0 w-full z-50">
+            {/* <div className="absolute top-0 left-0 w-full z-50">
                 <Header />
-            </div>
+            </div> */}
 
             <div className="relative w-full h-[150vh] flex">
                 {/* Lớp nền nâu đặc */}

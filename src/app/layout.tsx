@@ -1,3 +1,4 @@
+import Header from '@/component/componentHomePage/header';
 import './globals.scss'
 import { DM_Sans } from "next/font/google";
 import { Marcellus } from "next/font/google";
@@ -24,7 +25,10 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body className={`${dmSans.variable} ${marcellus.variable}`}>{children}</body>
+      <body className={`${dmSans.variable} ${marcellus.variable}`}>
+        <Header/>
+        {children}
+      </body>
     </html>
   )
 }

@@ -1,6 +1,7 @@
 'use client'
 
 import Image from "next/image"
+import Link from "next/link";
 import { useEffect, useState } from "react";
 import { BsSearch } from "react-icons/bs";
 import { BsArrowReturnRight } from "react-icons/bs";
@@ -55,7 +56,7 @@ const Header = () => {
         <header className={`fixed top-0 left-0 w-full h-[60px] sm:h-[80px] lg:h-[100px] flex items-center justify-between px-[30px] font-text-header font-dm z-50 transition-all duration-300
     ${scrolled
                 ? "bg-white shadow-md"   // ✅ ĐỔI nền thành trắng khi scroll
-                : "bg-[rgba(255,255,255,0.04)] backdrop-blur-sm"
+                : "bg-black/10"
             }`}>
             <div className="relative aspect-[487/120] w-[40vw] max-w-[180px] sm:max-w-[220px] lg:max-w-[230px]">
                 <Image
@@ -117,11 +118,13 @@ const Header = () => {
                                     <li className="color-text-header">Team Details</li>
                                     <li className="color-text-header">Faq</li>
                                     <li className="color-text-header">Testimonial</li>
-                                    <li className="color-text-header relative group/shop flex items-center justify-between cursor-pointer">
-                                        <span className="hover:text-[#C19D56]">Shop</span>
-                                        <IoIosArrowForward
-                                            className="arrow-icon"
-                                        />
+                                    <li >
+                                        <Link href='/shop' className="color-text-header relative group/shop flex items-center justify-between cursor-pointer">
+                                            <span className="hover:text-[#C19D56]">Shop</span>
+                                            <IoIosArrowForward
+                                                className="arrow-icon"
+                                            />
+                                        </Link>
                                         <div className="absolute top-0 left-full ml-2 w-56 bg-white shadow-lg opacity-0 invisible group-hover/shop:opacity-100 group-hover/shop:visible transition-all duration-300">
                                             <ul className="flex flex-col p-4 gap-2 text-left">
                                                 <li className="color-text-header">Cart</li>
