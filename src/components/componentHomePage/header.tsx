@@ -1,17 +1,32 @@
 'use client'
 
 import Image from "next/image"
+import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { BsSearch } from "react-icons/bs";
 import { BsArrowReturnRight } from "react-icons/bs";
-import { GiCoffeeCup } from "react-icons/gi";
 import { IoIosArrowForward } from "react-icons/io";
 import { IoIosArrowDown } from "react-icons/io";
+import { RxAvatar } from "react-icons/rx";
+import { useSession } from "next-auth/react";
 
+import Login from "../auth/login";
+import Profile from "../auth/profile";
+import { useDispatch } from "react-redux";
+import { openProfile } from "@/lib/features/ui/uiSlice";
 
 const Header = () => {
+    const path = usePathname();
+    const isSignInPage = path === '/auth/signin';
+    const text = isSignInPage ? 'Sign Up' : 'Sign In'
+    const href = isSignInPage ? '/auth/signup' : '/auth/signin'
     const [openModalSearch, setOpenModalSearch] = useState(false)
     const [scrolled, setScrolled] = useState(false);
+    const [openFormLogin, setOpenFormLogin] = useState(false)
+    const { data: session } = useSession();
+    const dispatch = useDispatch();
+
     useEffect(() => {
         const handleScroll = () => {
             if (window.scrollY > 50) {
@@ -24,6 +39,17 @@ const Header = () => {
         window.addEventListener("scroll", handleScroll);
         return () => window.removeEventListener("scroll", handleScroll);
     }, []);
+
+    const handleIconClick = () => {
+        if (session) {
+            // Nếu đã đăng nhập: Chuyển hướng trang Profile hoặc Admin
+            dispatch(openProfile());
+            // router.push('/dashboard'); 
+        } else {
+            // Nếu chưa đăng nhập: Mở modal
+            setOpenFormLogin(true);
+        }
+    };
     const menuItems = [
         {
             image: "/images/Menu-1.jpg", // thư mục public/images
@@ -51,11 +77,13 @@ const Header = () => {
         },
     ];
 
+
+
     return (
         <header className={`fixed top-0 left-0 w-full h-[60px] sm:h-[80px] lg:h-[100px] flex items-center justify-between px-[30px] font-text-header font-dm z-50 transition-all duration-300
     ${scrolled
                 ? "bg-white shadow-md"   // ✅ ĐỔI nền thành trắng khi scroll
-                : "bg-[rgba(255,255,255,0.04)] backdrop-blur-sm"
+                : "bg-black/20 "
             }`}>
             <div className="relative aspect-[487/120] w-[40vw] max-w-[180px] sm:max-w-[220px] lg:max-w-[230px]">
                 <Image
@@ -117,11 +145,13 @@ const Header = () => {
                                     <li className="color-text-header">Team Details</li>
                                     <li className="color-text-header">Faq</li>
                                     <li className="color-text-header">Testimonial</li>
-                                    <li className="color-text-header relative group/shop flex items-center justify-between cursor-pointer">
-                                        <span className="hover:text-[#C19D56]">Shop</span>
-                                        <IoIosArrowForward
-                                            className="arrow-icon"
-                                        />
+                                    <li className="color-text-header relative group/shop cursor-pointer">
+                                        <Link href='/shop' className="flex items-center justify-between">
+                                            <span className="hover:text-[#C19D56]">Shop</span>
+                                            <IoIosArrowForward
+                                                className="arrow-icon"
+                                            />
+                                        </Link>
                                         <div className="absolute top-0 left-full ml-2 w-56 bg-white shadow-lg opacity-0 invisible group-hover/shop:opacity-100 group-hover/shop:visible transition-all duration-300">
                                             <ul className="flex flex-col p-4 gap-2 text-left">
                                                 <li className="color-text-header">Cart</li>
@@ -209,14 +239,14 @@ const Header = () => {
                 </nav>
             </div>
             <div className="flex gap-6 items-center">
-                <button className="border border-transparent rounded-lg bg-[#C19D56] px-[25px] py-[10px] hover:bg-[#86624A] hover:border-[#C19D56] transition-colors duration-300">
-                    <span className="flex items-center justify-center gap-4">
-                        BOOK A TABLE
-                        <i>
-                            <BsArrowReturnRight />
-                        </i>
-                    </span>
-                </button>
+                <Link href={href} >
+                    <button className="border border-transparent rounded-lg bg-[#C19D56] px-[25px] py-[10px] hover:bg-[#86624A] hover:border-[#C19D56] transition-colors duration-300">
+                        <span className="flex items-center justify-center gap-4">
+                            Book A Table
+
+                        </span>
+                    </button>
+                </Link>
 
                 <div>
                     <button
@@ -257,18 +287,43 @@ const Header = () => {
                     )}
                 </div>
 
-                <div className="rounded-full bg-[#C19D56] 
-                w-10 h-10 sm:w-14 sm:h-14 lg:w-14 lg:h-14 
-                flex items-center justify-center 
-                text-2xl sm:text-3xl lg:text-4xl 
-                text-white 
-                hover:bg-[#86624A] transition-colors duration-300 ease-in-out">
-                    <GiCoffeeCup />
+                <button
+                    onClick={handleIconClick}
+                    className="rounded-full bg-[#C19D56] w-10 h-10 sm:w-14 sm:h-14 
+                flex items-center justify-center text-2xl sm:text-3xl text-white 
+                hover:bg-[#86624A] transition-colors duration-300"
+                >
+                    {/* 3. Logic đổi Icon: Có session -> Avatar, Không -> Mũi tên */}
+                    <i >
+                        {session ? <RxAvatar size={30} /> : <BsArrowReturnRight size={20} />}
+                    </i>
+                </button>
+                <div
+                    className={`fixed inset-0 z-50 ${openFormLogin ? "pointer-events-auto" : "pointer-events-none"
+                        }`}
+                >
+                    {/* overlay */}
+                    <div
+                        onClick={() => setOpenFormLogin(false)}
+                        className={`absolute inset-0 bg-black/40 transition-opacity duration-300
+      ${openFormLogin ? "opacity-100" : "opacity-0"}
+    `}
+                    />
+
+                    <Login
+                        openFormLogin={openFormLogin}
+                        setOpenFormLogin={setOpenFormLogin}
+
+                    />
                 </div>
 
+
+
             </div>
+            <Profile />
 
         </header>
+
     )
 }
 

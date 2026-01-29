@@ -167,10 +167,13 @@ body {
   align-items: center;
 }
 
+
+
 @keyframes spin-slow {
   from {
     transform: rotate(0deg);
   }
+
   to {
     transform: rotate(360deg);
   }
@@ -182,20 +185,115 @@ body {
 
 //animation list expert homepage
 @keyframes scroll-step {
-  0% { transform: translateX(0); }
-  10% { transform: translateX(-28.57%); }
-  20% { transform: translateX(-28.57%); }
-  30% { transform: translateX(-57.14%); }
-  40% { transform: translateX(-57.14%); }
-  50% { transform: translateX(-85.71%); }
-  60% { transform: translateX(-85.71%); }
-  70% { transform: translateX(-114.28%); }
-  80% { transform: translateX(-114.28%); }
-  90% { transform: translateX(-142.85%); }
-  100% { transform: translateX(0); }
+  0% {
+    transform: translateX(0);
+  }
+
+  10% {
+    transform: translateX(-28.57%);
+  }
+
+  20% {
+    transform: translateX(-28.57%);
+  }
+
+  30% {
+    transform: translateX(-57.14%);
+  }
+
+  40% {
+    transform: translateX(-57.14%);
+  }
+
+  50% {
+    transform: translateX(-85.71%);
+  }
+
+  60% {
+    transform: translateX(-85.71%);
+  }
+
+  70% {
+    transform: translateX(-114.28%);
+  }
+
+  80% {
+    transform: translateX(-114.28%);
+  }
+
+  90% {
+    transform: translateX(-142.85%);
+  }
+
+  100% {
+    transform: translateX(0);
+  }
 }
 
 .animate-scroll-step {
   animation: scroll-step 15s linear infinite;
 }
 
+/* ======================================
+   🎯 Custom Ant Design Slider (Final + Hover Reset)
+   ====================================== */
+
+/* Phần chưa chọn (rail) */
+.ant-slider .ant-slider-rail {
+  background-color: #eee !important;
+  height: 4px !important;
+  border-radius: 2px !important;
+}
+
+/* Phần đã chọn (track) */
+.ant-slider .ant-slider-track {
+  background-color: #C19D56 !important;
+  height: 4px !important;
+  border-radius: 2px !important;
+}
+
+/* Handle — chấm tròn */
+.ant-slider .ant-slider-handle {
+  width: 14px !important;
+  height: 14px !important;
+  border: 1px solid #C19D56 !important; /* viền vàng */
+  background-color: #fff !important; /* nền trắng mặc định */
+  border-radius: 50% !important; /* hình tròn */
+  position: absolute !important;
+  top: 50% !important;
+  transform: translateY(-50%) !important;
+  margin-top: 0 !important;
+  box-shadow: none !important;
+  transition: background-color 0.2s ease, border-color 0.2s ease;
+  cursor: pointer !important;
+  outline: none !important;
+}
+
+/* Ẩn các pseudo-elements */
+.ant-slider .ant-slider-handle::before,
+.ant-slider .ant-slider-handle::after {
+  display: none !important;
+  content: none !important;
+  box-shadow: none !important;
+}
+
+/* 🖱 Hover — đổi màu bên trong */
+.ant-slider .ant-slider-handle:hover {
+  background-color: #111111 !important;
+  border-color: #C19D56 !important;
+}
+
+/* 🖱 Active (khi đang kéo) — vẫn giữ hiệu ứng */
+.ant-slider .ant-slider-handle:active {
+  background-color: #111111 !important;
+  border-color: #C19D56 !important;
+  transform: translateY(-50%) !important;
+  cursor: pointer !important;
+}
+
+/* ✅ Reset lại khi không hover, không active, không focus */
+.ant-slider .ant-slider-handle:not(:hover):not(:active):not(:focus) {
+  background-color: #fff !important;
+  border-color: #C19D56 !important;
+  transform: translateY(-50%) !important;
+}

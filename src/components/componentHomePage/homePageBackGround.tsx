@@ -4,9 +4,9 @@ import Header from "./header"
 const HomePageBackGround = () => {
     return (
         <div className="relative">
-            <div className="absolute top-0 left-0 w-full z-50">
+            {/* <div className="absolute top-0 left-0 w-full z-50">
                 <Header />
-            </div>
+            </div> */}
 
             <div className="relative w-full h-[150vh] flex">
                 {/* Lớp nền nâu đặc */}
@@ -30,12 +30,12 @@ const HomePageBackGround = () => {
                         <h1 className="mt-4 text-5xl md:text-7xl text-gray-200 drop-shadow">
                             Awaken Your Taste Buds Today!
                         </h1>
-                        <span className="mt-4 text-lg md:text-3xl text-gray-200 drop-shadow">
+                        <p className="mt-4 text-lg md:text-3xl text-gray-200 drop-shadow">
                             Let's transform your online potential into measurable growth
-                        </span>
+                        </p>
                         <button className="self-start w-fit mt-6 sm:mt-8 md:mt-10 lg:mt-12 border border-transparent rounded-lg bg-[#C19D56] px-6 py-2 hover:bg-[#86624A] hover:border-[#C19D56] transition-colors duration-300">
                             <span className="flex items-center gap-4">
-                                BOOK A TABLE
+                                BUY NOW
                                 <BsArrowReturnRight />
                             </span>
                         </button>

@@ -83,13 +83,13 @@ const AboutUs = () => {
                         </p>
                     </div>
 
-                    <div className="flex flex-col sm:flex-row sm:items-center sm:gap-4 pb-4 sm:pb-6">
-                        <button className="self-start sm:self-auto mt-4 sm:mt-6 border border-transparent rounded-lg bg-[#C19D56] px-5 py-2 text-white font-semibold hover:bg-[#86624A] hover:border-[#C19D56] transition-colors duration-300 flex items-center gap-3">
+                    <div className="flex flex-col sm:flex-row sm:items-center gap-4 pb-4 sm:pb-6">
+                        <button className="border border-transparent rounded-lg bg-[#C19D56] px-5 py-2 text-white font-semibold hover:bg-[#86624A] transition-colors duration-300 flex items-center gap-3">
                             BOOK NOW
                             <BsArrowReturnRight />
                         </button>
 
-                        <span className="flex items-center gap-2 self-start sm:self-auto mt-2 sm:mt-6 px-4 py-1 text-[#C19D56] font-dm-sans cursor-pointer transition-colors duration-300 hover:text-[#86624A]">
+                        <span className="flex items-center gap-2 px-4 py-1 text-[#C19D56] font-dm-sans cursor-pointer transition-colors duration-300 hover:text-[#86624A]">
                             EXPLORE MORE
                             <BsArrowReturnRight />
                         </span>
