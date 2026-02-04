@@ -142,9 +142,7 @@ const Header = () => {
                             <div className="absolute top-full left-1/2 -translate-x-1/4 mt-2 w-64 bg-white shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300">
                                 <ul className="flex flex-col p-4 gap-2 text-left">
                                     <li className="color-text-header">Our Team</li>
-                                    <li className="color-text-header">Team Details</li>
                                     <li className="color-text-header">Faq</li>
-                                    <li className="color-text-header">Testimonial</li>
                                     <li className="color-text-header relative group/shop cursor-pointer">
                                         <Link href='/shop' className="flex items-center justify-between">
                                             <span className="hover:text-[#C19D56]">Shop</span>
@@ -154,7 +152,9 @@ const Header = () => {
                                         </Link>
                                         <div className="absolute top-0 left-full ml-2 w-56 bg-white shadow-lg opacity-0 invisible group-hover/shop:opacity-100 group-hover/shop:visible transition-all duration-300">
                                             <ul className="flex flex-col p-4 gap-2 text-left">
-                                                <li className="color-text-header">Cart</li>
+                                                <Link href='shop/cart'>
+                                                    <li className="color-text-header">Cart</li>
+                                                </Link>
                                                 <li className="color-text-header">Check Out</li>
                                                 <li className="color-text-header">My Account</li>
                                             </ul>

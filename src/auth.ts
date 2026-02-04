@@ -60,7 +60,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     // 1. Chạy khi đăng nhập thành công: Lưu token từ User vào JWT (Cookie)
     async jwt({ token, user }) {
       if (user) {
-        token.accessToken = (user as any).accessToken;
+        token.accessToken = user.accessToken;
         token.role = (user as any).role;
         token.id = (user as any).id;
       }
@@ -69,9 +69,10 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     // 2. Chạy khi Frontend gọi useSession(): Lấy token từ JWT trả về cho Client dùng
     async session({ session, token }) {
       if (token) {
-        (session as any).accessToken = token.accessToken;
-        (session as any).user.role = token.role;
-        (session as any).user.id = token.id;
+        session.user.id = token.id as string;
+        session.user.role = token.role as string;
+        session.accessToken = token.accessToken as string;
+        
       }
       return session;
     },

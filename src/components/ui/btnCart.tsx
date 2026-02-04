@@ -22,7 +22,7 @@ const CartDrawer = () => {
     };
 
     useEffect(() => {
-        const fakeUserId = 5; // Sau này thay bằng user.id thật
+        const fakeUserId = 3; // Sau này thay bằng user.id thật
         dispatch(getCartAPI(fakeUserId));
     }, [dispatch]);
 
