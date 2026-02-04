@@ -6,6 +6,7 @@ import { DM_Sans, Marcellus } from "next/font/google";
 import "antd/dist/reset.css";
 import StoreProvider from '@/lib/StoreProvider';
 import Providers from '@/components/Providers';
+import ButtonCart from '@/components/ui/btnCart';
 
 const dmSans = DM_Sans({
   subsets: ["latin"],
@@ -30,6 +31,7 @@ export default function RootLayout({
       <body className={`${dmSans.variable} ${marcellus.variable} flex flex-col min-h-screen`}>
         <Providers>
           <Header />
+          <ButtonCart />
           <main className='flex-grow'>
             {children}
           </main>

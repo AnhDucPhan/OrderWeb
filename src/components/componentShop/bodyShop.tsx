@@ -1,23 +1,106 @@
 'use client'
-import { Slider, Switch, ConfigProvider } from 'antd';
-import { useState } from "react";
+import { addToCartAPI } from '@/lib/features/cartSlice';
+import { AppDispatch } from '@/lib/store';
+import { Slider, Switch, ConfigProvider, message } from 'antd';
+import { useEffect, useState } from "react";
+import { useDispatch } from 'react-redux';
+
+interface Product {
+    id: number;
+    name: string;
+    price: number;
+    thumbnail: string;
+}
+
+interface Meta {
+    total: number;
+    lastPage: number;
+    currentPage: number;
+    perPage: number;
+}
 
 const BodyShop = () => {
+    const dispatch = useDispatch<AppDispatch>();
+    const [products, setProducts] = useState<Product[]>([]);
+    const [meta, setMeta] = useState<Meta | null>(null);
     const [disabled, setDisabled] = useState(false);
     const [sort, setSort] = useState('-createdAt')
+    const [loading, setLoading] = useState(true);
+    const [sortBy, setSortBy] = useState('createdAt');
 
+    const fetchProducts = async (page = 1, currentSort = sortBy) => { // Nhận thêm tham số currentSort
+        try {
+            setLoading(true);
 
-    const onChange = (checked: boolean) => {
-        setDisabled(checked);
+            // 👇 LOGIC MAPPING: Chuyển đổi từ value của Select sang params của API
+            let orderBy = 'createdAt';
+            let sort = 'desc';
+
+            switch (currentSort) {
+                case 'createdAt': // Default sorting (Cũ nhất)
+                    orderBy = 'createdAt';
+                    sort = 'asc';
+                    break;
+                case '-createdAt': // Latest (Mới nhất)
+                    orderBy = 'createdAt';
+                    sort = 'desc';
+                    break;
+                case 'priceLow': // Giá thấp -> cao
+                    orderBy = 'price';
+                    sort = 'asc';
+                    break;
+                case 'priceHigh': // Giá cao -> thấp
+                    orderBy = 'price';
+                    sort = 'desc';
+                    break;
+                default:
+                    break;
+            }
+
+            // Gọi API với các tham số đã map
+            const res = await fetch(
+                `http://localhost:8386/products?page=${page}&items_per_page=9&orderBy=${orderBy}&sort=${sort}`
+            );
+
+            const data = await res.json();
+            setProducts(data.data || []);
+            setMeta(data.meta);
+        } catch (error) {
+            console.error('Lỗi gọi API:', error);
+        } finally {
+            setLoading(false);
+        }
     };
 
-    const handleSortItems = (e: any, page: any) => {
-        const newSort = e.target.value;
-        setSort(newSort);
+    const handleSortChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+        const value = e.target.value;
+        setSortBy(value);     // Cập nhật State để UI hiển thị đúng
+        fetchProducts(1, value); // Gọi API ngay lập tức (Reset về trang 1)
+    };
 
-        // Cập nhật URL → trigger ProductPage render lại
-        // router.push(`?current=${page}&pageSize=${meta.pageSize}&sort=${newSort}`);
-    }
+    const handleAddToCart = (product: Product) => {
+        // Giả lập userId = 1 (Sau này bạn lấy từ Login)
+        const fakeUserId = 5;
+
+        dispatch(addToCartAPI({
+            productId: product.id,
+            quantity: 1,
+            userId: fakeUserId
+        }))
+            .unwrap() // Giúp bắt lỗi dễ hơn
+            .then(() => {
+                message.success(`Đã thêm ${product.name} vào giỏ!`);
+            })
+            .catch(() => {
+                message.error('Thêm thất bại!');
+            });
+    };
+
+    // Gọi API lần đầu khi vào trang
+    useEffect(() => {
+        fetchProducts(1);
+    }, [sort]);
+
 
     return (
         <ConfigProvider
@@ -241,20 +324,30 @@ const BodyShop = () => {
                     {/* Header: Showing + Select */}
                     <div className="flex flex-col sm:flex-row justify-between items-center gap-3 py-4">
                         {/* Left text */}
-                        <p className="text-sm sm:text-base text-[#797979] font-[DM_Sans] text-center sm:text-left">
-                            Showing <span className="text-[#111111] font-medium">1–9</span> of{" "}
-                            <span className="text-[#111111] font-medium">18</span> results
-                        </p>
+                        {(() => {
+                            if (!products || products.length === 0)
+                                return <p>Showing 0-0 of 0 results</p>;
 
+                            const from = meta ? (meta.currentPage - 1) * meta.perPage + 1 : 0;
+
+                            const to = from + products.length - 1;
+
+                            return (
+                                <p className="text-sm sm:text-base text-[#797979] font-[DM_Sans] text-center sm:text-left">
+                                    Showing <span className="text-[#111111] font-medium">{from}–{to}</span> of{" "}
+                                    <span className="text-[#111111] font-medium">{meta?.total || 0}</span> results
+                                </p>
+                            );
+                        })()}
                         {/* Right select */}
                         <form className="w-full sm:w-auto flex justify-center sm:justify-end">
                             <select
-                                className="w-full sm:w-auto text-sm sm:text-base text-[#111111] font-[DM_Sans] border border-gray-300 rounded-md px-3 py-2 h-[40px] outline-none bg-white transition "
+                                className="w-full sm:w-auto text-sm sm:text-base text-[#111111] font-[DM_Sans] border border-gray-300 rounded-md px-3 py-2 h-[40px] outline-none bg-white transition cursor-pointer"
                                 defaultValue="createdAt"
+                                value={sortBy}
+                                onChange={handleSortChange}
                             >
                                 <option value="createdAt">Default sorting</option>
-                                <option value="basePrice">Sort by popularity</option>
-                                <option value="-basePrice">Sort by average rating</option>
                                 <option value="-createdAt">Sort by latest</option>
                                 <option value="priceLow">Sort by price: low to high</option>
                                 <option value="priceHigh">Sort by price: high to low</option>
@@ -262,254 +355,120 @@ const BodyShop = () => {
                         </form>
                     </div>
 
-                    {/* Product grid */}
-                    <div className='mt-10'>
-                        <ul className="mt-8 w-full grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8 lg:gap-11">
-                            <li className="relative border border-gray-200 p-6 flex flex-col gap-2 items-center rounded-lg group overflow-hidden transition hover:shadow-lg">
-                                <a className="flex flex-col gap-2 items-center">
-                                    <img
-                                        src="/images/black-coffee.png"
-                                        alt="Black Coffee"
-                                        width={200}
-                                        height={200}
-                                        className="object-cover w-[180px] h-[180px] sm:w-[200px] sm:h-[200px]"
-                                    />
-                                    <h2 className="text-base sm:text-lg font-[DM_Sans] font-semibold text-[#262626] group-hover:text-[#C19D56] transition">
-                                        Black Coffee
-                                    </h2>
-                                </a>
+                    {/* Content List */}
+                    {loading ? (
+                        <div className="flex justify-center items-center h-40">
+                            <p className="text-gray-500">Đang tải dữ liệu...</p>
+                        </div>
+                    ) : (
+                        // 👇 SỬA LẠI: Thêm Grid để chia cột và đổi thành thẻ ul
+                        <ul className="mt-10 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+                            {Array.isArray(products) && products?.length > 0 ? (
+                                products.map((product) => (
+                                    <li
+                                        key={product.id} // 👈 QUAN TRỌNG: Phải có key
+                                        className="relative border border-gray-200 p-6 flex flex-col gap-2 items-center rounded-lg group overflow-hidden transition hover:shadow-lg hover:border-[#C19D56]"
+                                    >
+                                        <a href="#" className="flex flex-col gap-2 items-center w-full">
+                                            {/* Ảnh sản phẩm */}
+                                            <div className="relative group w-[180px] h-[180px] sm:w-[200px] sm:h-[200px] overflow-hidden rounded-md">
+                                                <img
+                                                    src={product.thumbnail || "/images/placeholder.png"}
+                                                    alt={product.name}
+                                                    width={200}
+                                                    height={200}
+                                                    className="object-cover w-full h-full transition-transform duration-500 group-hover:scale-110"
+                                                />
 
-                                {/* Prices */}
-                                <span className="prices-product flex gap-2 text-sm sm:text-base font-[DM_Sans]">
-                                    <del className="opacity-40">£15.00</del>
-                                    <ins className="no-underline text-[#C19D56]">£12.00</ins>
-                                </span>
+                                                {/* 2. Lớp phủ Add to Cart */}
+                                                <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
+                                                    <button
+                                                        className="bg-white text-[#C19D56] hover:bg-[#C19D56] hover:text-white font-bold py-2 px-4 rounded-full shadow-lg transform translate-y-4 group-hover:translate-y-0 transition-all duration-300 flex items-center gap-2"
+                                                        onClick={(e) => {
+                                                            e.preventDefault(); // Chặn click vào link cha (nếu có)
+                                                            handleAddToCart(product);
+                                                            console.log("Add to cart:", product.id);
+                                                        }}
+                                                    >
 
-                                {/* Hover overlay */}
-                                <div className="absolute inset-0 flex items-center justify-center bg-black/30 opacity-0 group-hover:opacity-100 z-10 transition-all duration-300">
-                                    <button className="bg-white text-black px-4 py-2 rounded shadow hover:bg-[#C19D56] hover:text-white transition">
-                                        Add to Cart
-                                    </button>
-                                </div>
-                            </li>
-                            <li className="relative border border-gray-200 p-6 flex flex-col gap-2 items-center rounded-lg group overflow-hidden transition hover:shadow-lg">
-                                <a className="flex flex-col gap-2 items-center">
-                                    <img
-                                        src="/images/black-coffee.png"
-                                        alt="Black Coffee"
-                                        width={200}
-                                        height={200}
-                                        className="object-cover w-[180px] h-[180px] sm:w-[200px] sm:h-[200px]"
-                                    />
-                                    <h2 className="text-base sm:text-lg font-[DM_Sans] font-semibold text-[#262626] group-hover:text-[#C19D56] transition">
-                                        Black Coffee
-                                    </h2>
-                                </a>
+                                                        Add to cart
+                                                    </button>
+                                                </div>
+                                            </div>
 
-                                {/* Prices */}
-                                <span className="prices-product flex gap-2 text-sm sm:text-base font-[DM_Sans]">
-                                    <del className="opacity-40">£15.00</del>
-                                    <ins className="no-underline text-[#C19D56]">£12.00</ins>
-                                </span>
+                                            {/* Tên sản phẩm */}
+                                            <h2 className="text-base sm:text-lg font-[DM_Sans] font-semibold text-[#262626] group-hover:text-[#C19D56] transition text-center line-clamp-2">
+                                                {product.name}
+                                            </h2>
 
-                                {/* Hover overlay */}
-                                <div className="absolute inset-0 flex items-center justify-center bg-black/30 opacity-0 group-hover:opacity-100 z-10 transition-all duration-300">
-                                    <button className="bg-white text-black px-4 py-2 rounded shadow hover:bg-[#C19D56] hover:text-white transition">
-                                        Add to Cart
-                                    </button>
-                                </div>
-                            </li>
-                            <li className="relative border border-gray-200 p-6 flex flex-col gap-2 items-center rounded-lg group overflow-hidden transition hover:shadow-lg">
-                                <a className="flex flex-col gap-2 items-center">
-                                    <img
-                                        src="/images/black-coffee.png"
-                                        alt="Black Coffee"
-                                        width={200}
-                                        height={200}
-                                        className="object-cover w-[180px] h-[180px] sm:w-[200px] sm:h-[200px]"
-                                    />
-                                    <h2 className="text-base sm:text-lg font-[DM_Sans] font-semibold text-[#262626] group-hover:text-[#C19D56] transition">
-                                        Black Coffee
-                                    </h2>
-                                </a>
-
-                                {/* Prices */}
-                                <span className="prices-product flex gap-2 text-sm sm:text-base font-[DM_Sans]">
-                                    <del className="opacity-40">£15.00</del>
-                                    <ins className="no-underline text-[#C19D56]">£12.00</ins>
-                                </span>
-
-                                {/* Hover overlay */}
-                                <div className="absolute inset-0 flex items-center justify-center bg-black/30 opacity-0 group-hover:opacity-100 z-10 transition-all duration-300">
-                                    <button className="bg-white text-black px-4 py-2 rounded shadow hover:bg-[#C19D56] hover:text-white transition">
-                                        Add to Cart
-                                    </button>
-                                </div>
-                            </li>
-                            <li className="relative border border-gray-200 p-6 flex flex-col gap-2 items-center rounded-lg group overflow-hidden transition hover:shadow-lg">
-                                <a className="flex flex-col gap-2 items-center">
-                                    <img
-                                        src="/images/black-coffee.png"
-                                        alt="Black Coffee"
-                                        width={200}
-                                        height={200}
-                                        className="object-cover w-[180px] h-[180px] sm:w-[200px] sm:h-[200px]"
-                                    />
-                                    <h2 className="text-base sm:text-lg font-[DM_Sans] font-semibold text-[#262626] group-hover:text-[#C19D56] transition">
-                                        Black Coffee
-                                    </h2>
-                                </a>
-
-                                {/* Prices */}
-                                <span className="prices-product flex gap-2 text-sm sm:text-base font-[DM_Sans]">
-                                    <del className="opacity-40">£15.00</del>
-                                    <ins className="no-underline text-[#C19D56]">£12.00</ins>
-                                </span>
-
-                                {/* Hover overlay */}
-                                <div className="absolute inset-0 flex items-center justify-center bg-black/30 opacity-0 group-hover:opacity-100 z-10 transition-all duration-300">
-                                    <button className="bg-white text-black px-4 py-2 rounded shadow hover:bg-[#C19D56] hover:text-white transition">
-                                        Add to Cart
-                                    </button>
-                                </div>
-                            </li>
-                            <li className="relative border border-gray-200 p-6 flex flex-col gap-2 items-center rounded-lg group overflow-hidden transition hover:shadow-lg">
-                                <a className="flex flex-col gap-2 items-center">
-                                    <img
-                                        src="/images/black-coffee.png"
-                                        alt="Black Coffee"
-                                        width={200}
-                                        height={200}
-                                        className="object-cover w-[180px] h-[180px] sm:w-[200px] sm:h-[200px]"
-                                    />
-                                    <h2 className="text-base sm:text-lg font-[DM_Sans] font-semibold text-[#262626] group-hover:text-[#C19D56] transition">
-                                        Black Coffee
-                                    </h2>
-                                </a>
-
-                                {/* Prices */}
-                                <span className="prices-product flex gap-2 text-sm sm:text-base font-[DM_Sans]">
-                                    <del className="opacity-40">£15.00</del>
-                                    <ins className="no-underline text-[#C19D56]">£12.00</ins>
-                                </span>
-
-                                {/* Hover overlay */}
-                                <div className="absolute inset-0 flex items-center justify-center bg-black/30 opacity-0 group-hover:opacity-100 z-10 transition-all duration-300">
-                                    <button className="bg-white text-black px-4 py-2 rounded shadow hover:bg-[#C19D56] hover:text-white transition">
-                                        Add to Cart
-                                    </button>
-                                </div>
-                            </li>
-                            <li className="relative border border-gray-200 p-6 flex flex-col gap-2 items-center rounded-lg group overflow-hidden transition hover:shadow-lg">
-                                <a className="flex flex-col gap-2 items-center">
-                                    <img
-                                        src="/images/black-coffee.png"
-                                        alt="Black Coffee"
-                                        width={200}
-                                        height={200}
-                                        className="object-cover w-[180px] h-[180px] sm:w-[200px] sm:h-[200px]"
-                                    />
-                                    <h2 className="text-base sm:text-lg font-[DM_Sans] font-semibold text-[#262626] group-hover:text-[#C19D56] transition">
-                                        Black Coffee
-                                    </h2>
-                                </a>
-
-                                {/* Prices */}
-                                <span className="prices-product flex gap-2 text-sm sm:text-base font-[DM_Sans]">
-                                    <del className="opacity-40">£15.00</del>
-                                    <ins className="no-underline text-[#C19D56]">£12.00</ins>
-                                </span>
-
-                                {/* Hover overlay */}
-                                <div className="absolute inset-0 flex items-center justify-center bg-black/30 opacity-0 group-hover:opacity-100 z-10 transition-all duration-300">
-                                    <button className="bg-white text-black px-4 py-2 rounded shadow hover:bg-[#C19D56] hover:text-white transition">
-                                        Add to Cart
-                                    </button>
-                                </div>
-                            </li>
-                            <li className="relative border border-gray-200 p-6 flex flex-col gap-2 items-center rounded-lg group overflow-hidden transition hover:shadow-lg">
-                                <a className="flex flex-col gap-2 items-center">
-                                    <img
-                                        src="/images/black-coffee.png"
-                                        alt="Black Coffee"
-                                        width={200}
-                                        height={200}
-                                        className="object-cover w-[180px] h-[180px] sm:w-[200px] sm:h-[200px]"
-                                    />
-                                    <h2 className="text-base sm:text-lg font-[DM_Sans] font-semibold text-[#262626] group-hover:text-[#C19D56] transition">
-                                        Black Coffee
-                                    </h2>
-                                </a>
-
-                                {/* Prices */}
-                                <span className="prices-product flex gap-2 text-sm sm:text-base font-[DM_Sans]">
-                                    <del className="opacity-40">£15.00</del>
-                                    <ins className="no-underline text-[#C19D56]">£12.00</ins>
-                                </span>
-
-                                {/* Hover overlay */}
-                                <div className="absolute inset-0 flex items-center justify-center bg-black/30 opacity-0 group-hover:opacity-100 z-10 transition-all duration-300">
-                                    <button className="bg-white text-black px-4 py-2 rounded shadow hover:bg-[#C19D56] hover:text-white transition">
-                                        Add to Cart
-                                    </button>
-                                </div>
-                            </li>
-                            <li className="relative border border-gray-200 p-6 flex flex-col gap-2 items-center rounded-lg group overflow-hidden transition hover:shadow-lg">
-                                <a className="flex flex-col gap-2 items-center">
-                                    <img
-                                        src="/images/black-coffee.png"
-                                        alt="Black Coffee"
-                                        width={200}
-                                        height={200}
-                                        className="object-cover w-[180px] h-[180px] sm:w-[200px] sm:h-[200px]"
-                                    />
-                                    <h2 className="text-base sm:text-lg font-[DM_Sans] font-semibold text-[#262626] group-hover:text-[#C19D56] transition">
-                                        Black Coffee
-                                    </h2>
-                                </a>
-
-                                {/* Prices */}
-                                <span className="prices-product flex gap-2 text-sm sm:text-base font-[DM_Sans]">
-                                    <del className="opacity-40">£15.00</del>
-                                    <ins className="no-underline text-[#C19D56]">£12.00</ins>
-                                </span>
-
-                                {/* Hover overlay */}
-                                <div className="absolute inset-0 flex items-center justify-center bg-black/30 opacity-0 group-hover:opacity-100 z-10 transition-all duration-300">
-                                    <button className="bg-white text-black px-4 py-2 rounded shadow hover:bg-[#C19D56] hover:text-white transition">
-                                        Add to Cart
-                                    </button>
-                                </div>
-                            </li>
-                            <li className="relative border border-gray-200 p-6 flex flex-col gap-2 items-center rounded-lg group overflow-hidden transition hover:shadow-lg">
-                                <a className="flex flex-col gap-2 items-center">
-                                    <img
-                                        src="/images/black-coffee.png"
-                                        alt="Black Coffee"
-                                        width={200}
-                                        height={200}
-                                        className="object-cover w-[180px] h-[180px] sm:w-[200px] sm:h-[200px]"
-                                    />
-                                    <h2 className="text-base sm:text-lg font-[DM_Sans] font-semibold text-[#262626] group-hover:text-[#C19D56] transition">
-                                        Black Coffee
-                                    </h2>
-                                </a>
-
-                                {/* Prices */}
-                                <span className="prices-product flex gap-2 text-sm sm:text-base font-[DM_Sans]">
-                                    <del className="opacity-40">£15.00</del>
-                                    <ins className="no-underline text-[#C19D56]">£12.00</ins>
-                                </span>
-
-                                {/* Hover overlay */}
-                                <div className="absolute inset-0 flex items-center justify-center bg-black/30 opacity-0 group-hover:opacity-100 z-10 transition-all duration-300">
-                                    <button className="bg-white text-black px-4 py-2 rounded shadow hover:bg-[#C19D56] hover:text-white transition">
-                                        Add to Cart
-                                    </button>
-                                </div>
-                            </li>
+                                            {/* Giá tiền (Thêm vào cho đầy đủ) */}
+                                            <p className="text-[#C19D56] font-bold">
+                                                {Number(product.price).toLocaleString('vi-VN')} đ
+                                            </p>
+                                        </a>
+                                    </li>
+                                ))
+                            ) : (
+                                <p className="col-span-full text-center text-gray-500">
+                                    Không tìm thấy sản phẩm nào.
+                                </p>
+                            )}
                         </ul>
-                    </div>
+                    )}
+                    {/* Pagination Section */}
+                    {meta && meta.lastPage > 1 && (
+                        <nav className="flex justify-center mt-12">
+                            <ul className="flex gap-2 items-center">
+
+                                {/* 1. Nút Previous (Trang trước) */}
+                                <li>
+                                    <button
+                                        disabled={meta.currentPage === 1}
+                                        onClick={() => fetchProducts(meta.currentPage - 1)}
+                                        className={`w-10 h-10 flex items-center justify-center rounded-md border border-gray-200 transition-colors duration-200
+                    ${meta.currentPage === 1
+                                                ? 'text-gray-300 cursor-not-allowed'
+                                                : 'text-[#111111] hover:bg-[#C19D56] hover:text-white hover:border-[#C19D56]'
+                                            }`}
+                                    >
+                                        &#8592; {/* Mũi tên trái */}
+                                    </button>
+                                </li>
+
+                                {/* 2. Danh sách số trang */}
+                                {/* Tạo mảng từ 1 đến lastPage. Ví dụ lastPage = 3 -> [1, 2, 3] */}
+                                {Array.from({ length: meta.lastPage }, (_, i) => i + 1).map((pageNumber) => (
+                                    <li key={pageNumber}>
+                                        <button
+                                            onClick={() => fetchProducts(pageNumber)}
+                                            className={`w-10 h-10 flex items-center justify-center rounded-md border transition-colors duration-200 font-[DM_Sans] font-medium
+                        ${Number(pageNumber) === Number(meta.currentPage)
+                                                    ? 'bg-[#111111] !text-white border-[#111111]' // Style trang hiện tại
+                                                    : 'text-[#111111] border-gray-200 hover:bg-[#C19D56] hover:text-white hover:border-[#C19D56]' // Style trang thường
+                                                }`}
+                                        >
+                                            {pageNumber}
+                                        </button>
+                                    </li>
+                                ))}
+
+                                {/* 3. Nút Next (Trang sau) */}
+                                <li>
+                                    <button
+                                        disabled={meta.currentPage === meta.lastPage}
+                                        onClick={() => fetchProducts(meta.currentPage + 1)}
+                                        className={`w-10 h-10 flex items-center justify-center rounded-md border border-gray-200 transition-colors duration-200
+                    ${meta.currentPage === meta.lastPage
+                                                ? 'text-gray-300 cursor-not-allowed'
+                                                : 'text-[#111111] hover:bg-[#C19D56] hover:text-white hover:border-[#C19D56]'
+                                            }`}
+                                    >
+                                        &#8594; {/* Mũi tên phải */}
+                                    </button>
+                                </li>
+                            </ul>
+                        </nav>
+                    )}
                 </div>
 
             </div>

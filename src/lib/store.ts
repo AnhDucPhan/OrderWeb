@@ -1,15 +1,13 @@
 import { configureStore } from '@reduxjs/toolkit';
-import counterReducer from './features/counter/counterSlice';
 import uiReducer from './features/ui/uiSlice';
+import cartReducer from './features/cartSlice';
 
 // Tạo store
 export const makeStore = () => {
   return configureStore({
     reducer: {
-      counter: counterReducer,
       ui: uiReducer,
-      // sau này có thêm user, cart thì thêm vào đây
-      // user: userReducer,
+      cart:cartReducer,
     },
   });
 };

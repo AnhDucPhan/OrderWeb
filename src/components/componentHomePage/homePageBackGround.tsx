@@ -1,5 +1,4 @@
 import { BsArrowReturnRight } from "react-icons/bs";
-import Header from "./header"
 
 const HomePageBackGround = () => {
     return (
