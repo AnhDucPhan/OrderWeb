@@ -22,9 +22,8 @@ const CartDrawer = () => {
     };
 
     useEffect(() => {
-        const fakeUserId = 3; // Sau này thay bằng user.id thật
-        dispatch(getCartAPI(fakeUserId));
-    }, [dispatch]);
+    dispatch(getCartAPI()); 
+}, [dispatch]);
 
     return (
         <ConfigProvider

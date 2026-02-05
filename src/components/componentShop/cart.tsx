@@ -2,15 +2,17 @@
 
 import React from 'react';
 import Link from 'next/link';
-import { ConfigProvider, InputNumber, Button, Divider, Input } from 'antd';
+import { ConfigProvider, InputNumber, Button, Divider, Input, Modal, message } from 'antd';
 import { DeleteOutlined, ArrowLeftOutlined, ShoppingCartOutlined } from '@ant-design/icons';
 import { useSelector, useDispatch } from 'react-redux';
-import { RootState } from '@/lib/store';
-// Nhớ import các action từ slice của bạn (ví dụ updateQuantity, removeItem...)
-// import { updateQuantity, removeItem } from '@/lib/features/cartSlice';
+import { AppDispatch, RootState } from '@/lib/store';
+import { removeCartItemAPI } from '@/lib/features/cartSlice';
+
 
 const CartComponent = () => {
-    const dispatch = useDispatch();
+    const dispatch = useDispatch<AppDispatch>();
+    const [modal, contextHolder] = Modal.useModal();
+
     // Lấy data từ Redux
     const { items: cartItems } = useSelector((state: RootState) => state.cart);
 
@@ -28,11 +30,31 @@ const CartComponent = () => {
         // dispatch(updateQuantity({ id, quantity: value }));
     };
 
-    // Xử lý xóa (Placeholder)
-    const handleRemove = (id: number) => {
-        console.log('Remove item:', id);
-        // dispatch(removeItem(id));
-    };
+
+    const handleRemoveItem = (itemId: number) => {
+        // 2. DÙNG BIẾN 'modal' TỪ HOOK (thay vì Modal.confirm)
+        console.log("1. Nút xóa đã được bấm, ID:", itemId);
+        console.log("2. Hàm dispatch có tồn tại không?", !!dispatch);
+        console.log("3. Hàm removeCartItemAPI có phải function không?", typeof removeCartItemAPI);
+        modal.confirm({
+            title: 'Are you sure?',
+            content: 'Do you want to remove this item?',
+            okText: 'Yes, Remove',
+            cancelText: 'Cancel',
+            okType: 'danger',
+            // Thêm async để xử lý await
+            onOk: async () => {
+                try {
+                    // Gọi API
+                    await dispatch(removeCartItemAPI(itemId)).unwrap();
+                    message.success('Item removed!');
+                } catch (error) {
+                    console.error("Lỗi xóa:", error);
+                    message.error('Failed to remove item');
+                }
+            }
+        });
+    }
 
     if (cartItems.length === 0) {
         return (
@@ -60,6 +82,7 @@ const CartComponent = () => {
                 }
             }}
         >
+            {contextHolder}
             <div className="bg-[#fcfcfc] min-h-screen py-10 sm:py-16">
                 <div className="container mx-auto px-4 sm:px-6 lg:px-24">
 
@@ -89,10 +112,10 @@ const CartComponent = () => {
                                     <div key={item.id} className="group relative bg-white border border-gray-100 p-4 rounded-lg sm:border-0 sm:bg-transparent sm:p-0 sm:rounded-none flex flex-col sm:grid sm:grid-cols-12 gap-4 items-center shadow-sm sm:shadow-none">
 
                                         {/* 1. Product Info */}
-                                        <div className="col-span-6 flex gap-4 w-full items-center">
+                                        <div className="relative col-span-6 flex gap-4 w-full items-center">
                                             {/* Nút xóa (Mobile thì hiện góc phải, PC hiện bên trái ảnh) */}
                                             <button
-                                                onClick={() => handleRemove(item.id)}
+                                                onClick={() => handleRemoveItem(item.id)}
                                                 className="absolute top-4 right-4 sm:static text-gray-400 hover:text-red-500 transition-colors"
                                             >
                                                 <DeleteOutlined />

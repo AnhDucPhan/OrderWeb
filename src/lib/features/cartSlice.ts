@@ -70,6 +70,30 @@ export const getCartAPI = createAsyncThunk(
   }
 );
 
+export const removeCartItemAPI = createAsyncThunk(
+  'cart/removeCartItemAPI',
+  async (itemId: number, { rejectWithValue }) => {
+    try {
+      const session = await getSession();
+      const token = session?.accessToken;
+
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/cart/item/${itemId}`, {
+        method: 'DELETE', // Method DELETE
+        headers: {
+          'Authorization': `Bearer ${token}`
+        },
+      });
+
+      if (!res.ok) throw new Error('Lỗi xóa sản phẩm');
+
+      // Trả về ID đã xóa để Redux cập nhật state
+      return itemId;
+    } catch (error) {
+      return rejectWithValue('Lỗi xóa sản phẩm');
+    }
+  }
+);
+
 const cartSlice = createSlice({
   name: 'cart',
   initialState,
@@ -96,6 +120,11 @@ const cartSlice = createSlice({
       } else {
         state.items = [];
       }
+    });
+    builder.addCase(removeCartItemAPI.fulfilled, (state, action) => {
+      // Lọc bỏ item có ID vừa xóa khỏi mảng items
+      state.items = state.items.filter((item) => item.id !== action.payload);
+      // (Optional) Thông báo thành công nếu cần thiết
     });
   },
 });
