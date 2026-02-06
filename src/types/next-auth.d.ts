@@ -9,7 +9,7 @@ declare module "next-auth" {
     accessToken?: string
     user: {
       id: string
-      role: string
+      role?: string
       // Các field khác (role, address...) nếu cần
     } & DefaultSession["user"]
   }

@@ -63,7 +63,7 @@ const CartComponent = () => {
                     <ShoppingCartOutlined style={{ fontSize: '48px' }} />
                 </div>
                 <h2 className="text-2xl font-[Marcellus] text-[#111111]">Your cart is currently empty.</h2>
-                <Link href="/products">
+                <Link href="/shop">
                     <button className="bg-[#111111] !text-white px-8 py-3 rounded hover:bg-[#C19D56] transition-all duration-300 font-[DM_Sans] font-bold uppercase tracking-wider">
                         Return to Shop
                     </button>

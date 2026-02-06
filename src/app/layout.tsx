@@ -1,12 +1,8 @@
 // app/layout.tsx
-import Header from '@/components/componentHomePage/header';
-import Footer from '@/components/componentHomePage/footer';
 import './globals.scss'
 import { DM_Sans, Marcellus } from "next/font/google";
 import "antd/dist/reset.css";
-import StoreProvider from '@/lib/StoreProvider';
-import Providers from '@/components/Providers';
-import ButtonCart from '@/components/ui/btnCart';
+import Providers from '@/components/Providers'; // Giữ lại Provider nếu Admin cũng cần Redux/Auth
 
 const dmSans = DM_Sans({
   subsets: ["latin"],
@@ -20,6 +16,11 @@ const marcellus = Marcellus({
   variable: "--font-marcellus",
 });
 
+export const metadata = {
+  title: 'My Shop',
+  description: 'E-commerce Website',
+}
+
 export default function RootLayout({
   children,
 }: {
@@ -27,15 +28,12 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-
       <body className={`${dmSans.variable} ${marcellus.variable} flex flex-col min-h-screen`}>
         <Providers>
-          <Header />
-          <ButtonCart />
-          <main className='flex-grow'>
+            {/* Ở đây KHÔNG CÒN Header hay Footer nữa.
+              Nó chỉ render children (có thể là layout con của user hoặc layout con của admin)
+            */}
             {children}
-          </main>
-          <Footer />
         </Providers>
       </body>
     </html>

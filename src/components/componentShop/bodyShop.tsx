@@ -117,32 +117,35 @@ const BodyShop = () => {
                 },
             }}
         >
-            <div className='bg-[#fcfcfc] min-h-screen py-8 sm:py-16'>
-                {/* Breadcrumb Section */}
-                <div className="container mx-auto px-4 md:px-8 lg:px-12 mb-8 text-center sm:text-left">
-                    <h1 className="text-3xl sm:text-4xl font-[Marcellus] text-[#111111] mb-2">Shopping Now</h1>
-                    <p className="text-gray-500 font-[DM_Sans] text-sm sm:text-base">
-                        <Link href="/" className="hover:text-[#C19D56] transition-colors">Home</Link> / Shop
-                    </p>
-                </div>
+            <div className='bg-[#fcfcfc] min-h-screen py-8 sm:py-12'>
+                {/* CONTAINER CHÍNH: Giới hạn chiều rộng tối đa 1350px để không bị loãng trên màn to */}
+                <div className="w-full max-w-[1350px] mx-auto px-4 sm:px-6 lg:px-8">
 
-                <div className="container mx-auto px-4 md:px-8 lg:px-12 flex flex-col lg:flex-row gap-8 items-start relative">
+                    {/* Breadcrumb Section */}
+                    <div className="mb-8 text-center sm:text-left">
+                        <h1 className="text-3xl md:text-4xl font-[Marcellus] text-[#111111] mb-2">Shopping Now</h1>
+                        <p className="text-gray-500 font-[DM_Sans] text-sm md:text-base">
+                            <Link href="/" className="hover:text-[#C19D56] transition-colors">Home</Link> / Shop
+                        </p>
+                    </div>
 
-                    {/* --- SIDEBAR FILTER --- */}
-                    {/* Thêm lg:sticky để thanh filter trôi theo khi scroll trên desktop */}
-                    <aside className="w-full lg:w-1/4 lg:sticky lg:top-24 z-10 space-y-6">
+                    {/* Layout Flex: Sidebar trái - Content phải */}
+                    <div className="flex flex-col lg:flex-row gap-8 lg:gap-10 items-start relative">
 
-                        {/* TRICK: Dùng details/summary để thu gọn filter trên Mobile, mở sẵn trên Desktop (bằng css hoặc logic check width) */}
-                        {/* Ở đây mình làm giao diện mobile hiển thị nút "Show Filter" */}
-                        <div className="lg:block">
-                            <div className="bg-white border border-gray-200 rounded-2xl p-5 sm:p-6 shadow-sm">
-                                <h3 className="relative pl-6 text-[#111111] font-[Marcellus] text-xl sm:text-2xl mb-6
+                        {/* --- SIDEBAR FILTER --- */}
+                        {/* Desktop: Chiếm 25% (w-1/4). Mobile: Chiếm 100% */}
+                        {/* sticky: Giúp thanh filter trôi theo khi cuộn trên desktop */}
+                        <div className="w-full lg:w-1/4 flex-shrink-0 space-y-6 lg:sticky lg:top-4">
+
+                            {/* Filter by Price */}
+                            <div className="border border-gray-200 rounded-2xl p-5 bg-white shadow-sm">
+                                <h3 className="relative pl-5 text-[#111111] font-[Marcellus] text-xl sm:text-2xl mb-4
                             before:content-[''] before:absolute before:top-1/2 before:left-0 before:-translate-y-1/2
                             before:w-[8px] before:h-[8px] before:rounded-full before:bg-[#C19D56]">
                                     Filter by price
                                 </h3>
 
-                                <div className="px-2">
+                                <div className="mt-2 px-1">
                                     <Slider
                                         range
                                         defaultValue={[20, 50]}
@@ -150,239 +153,221 @@ const BodyShop = () => {
                                     />
                                 </div>
 
-                                <div className="flex justify-between gap-3 mt-6">
+                                <div className="flex justify-between gap-3 mt-4">
                                     <div className="flex flex-col items-center gap-1 w-full">
-                                        <span className="text-xs text-gray-400 font-[DM_Sans] uppercase tracking-wider">Min</span>
                                         <input
                                             type="number"
-                                            className="w-full p-2 text-center text-sm rounded bg-[#f5f5f5] font-semibold text-[#111111] outline-none focus:ring-1 focus:ring-[#C19D56]"
-                                            value={20}
-                                            readOnly
+                                            className="w-full py-1 text-center text-sm rounded border-0 bg-[#f5f5f5] font-semibold text-[#111111] outline-none"
+                                            value={20} readOnly
                                         />
+                                        <label className="text-xs text-gray-400 font-[DM_Sans]">Min</label>
                                     </div>
                                     <div className="flex flex-col items-center gap-1 w-full">
-                                        <span className="text-xs text-gray-400 font-[DM_Sans] uppercase tracking-wider">Max</span>
                                         <input
                                             type="number"
-                                            className="w-full p-2 text-center text-sm rounded bg-[#f5f5f5] font-semibold text-[#111111] outline-none focus:ring-1 focus:ring-[#C19D56]"
-                                            value={50}
-                                            readOnly
+                                            className="w-full py-1 text-center text-sm rounded border-0 bg-[#f5f5f5] font-semibold text-[#111111] outline-none"
+                                            value={50} readOnly
                                         />
+                                        <label className="text-xs text-gray-400 font-[DM_Sans]">Max</label>
                                     </div>
                                 </div>
                             </div>
 
-                            {/* Categories - Ẩn bớt trên mobile nếu quá dài, ở đây mình giữ nguyên layout nhưng tút lại padding */}
-                            <div className="bg-white border border-gray-200 rounded-2xl p-5 sm:p-6 mt-6 shadow-sm">
-                                <h3 className="relative pl-6 text-[#111111] font-[Marcellus] text-xl sm:text-2xl mb-4
+                            {/* Categories */}
+                            <div className="border border-gray-200 rounded-2xl p-5 bg-white shadow-sm">
+                                <h3 className="relative pl-5 text-[#111111] font-[Marcellus] text-xl sm:text-2xl mb-4
                             before:content-[''] before:absolute before:top-1/2 before:left-0 before:-translate-y-1/2
                             before:w-[8px] before:h-[8px] before:rounded-full before:bg-[#C19D56]">
                                     Categories
                                 </h3>
-                                <ul className="space-y-2">
+                                <ul className="space-y-1">
                                     {['Uncategorized', 'Accessories', 'Clothing', 'Hoodies', 'Music', 'Tshirts'].map((item) => (
-                                        <li key={item} className="group flex items-center justify-between cursor-pointer">
-                                            <span className="text-[#555] font-[DM_Sans] group-hover:text-[#C19D56] transition-colors">
+                                        <li key={item} className="py-1">
+                                            <span className="text-sm sm:text-base text-[#555] font-[DM_Sans] hover:text-[#C19D56] transition-colors cursor-pointer block">
                                                 {item}
                                             </span>
-                                            {/* Thêm mũi tên nhỏ hoặc số lượng nếu cần cho đẹp */}
-                                            <span className="text-gray-300 text-sm group-hover:text-[#C19D56] transition-colors">›</span>
                                         </li>
                                     ))}
                                 </ul>
                             </div>
 
-                            {/* Tags */}
-                            <div className="bg-white border border-gray-200 rounded-2xl p-5 sm:p-6 mt-6 shadow-sm">
-                                <h3 className="relative pl-6 text-[#111111] font-[Marcellus] text-xl sm:text-2xl mb-4
+                            {/* Product Tags */}
+                            <div className='border border-gray-200 rounded-2xl p-5 bg-white shadow-sm'>
+                                <h3 className="relative pl-5 text-[#111111] font-[Marcellus] text-xl sm:text-2xl mb-4
                             before:content-[''] before:absolute before:top-1/2 before:left-0 before:-translate-y-1/2
                             before:w-[8px] before:h-[8px] before:rounded-full before:bg-[#C19D56]">
                                     Tags
                                 </h3>
                                 <div className="flex flex-wrap gap-2">
-                                    {['Aroma', 'Bean', 'Crema', 'Espresso', 'PerkUp', 'Roast'].map(tag => (
-                                        <a key={tag} className="text-xs font-medium text-[#797979] bg-[#f6f6f8] px-3 py-2 rounded transition-all hover:bg-[#C19D56] hover:text-white cursor-pointer">
+                                    {['Aroma', 'Bean', 'Crema', 'Espresso', 'PerkUp', 'Roast'].map((tag) => (
+                                        <a key={tag} className="font-medium text-xs sm:text-sm text-[#797979] bg-[#f6f6f8] 
+                                    px-3 py-2 rounded-md hover:bg-[#C19D56] hover:text-[#fff] transition-colors cursor-pointer">
                                             {tag}
                                         </a>
                                     ))}
                                 </div>
                             </div>
 
-                            {/* Top Products - Ẩn trên Mobile để đỡ dài dòng */}
-                            <div className="hidden lg:block bg-white border border-gray-200 rounded-2xl p-5 sm:p-6 mt-6 shadow-sm">
-                                <h3 className="relative pl-6 text-[#111111] font-[Marcellus] text-xl sm:text-2xl mb-4
+                            {/* Sidebar Products List (Ẩn bớt trên mobile cho gọn nếu muốn, ở đây tui giữ nguyên nhưng chỉnh padding) */}
+                            <div className='border border-gray-200 rounded-2xl p-5 bg-white shadow-sm'>
+                                <h3 className="relative pl-5 text-[#111111] font-[Marcellus] text-xl sm:text-2xl mb-4
                             before:content-[''] before:absolute before:top-1/2 before:left-0 before:-translate-y-1/2
                             before:w-[8px] before:h-[8px] before:rounded-full before:bg-[#C19D56]">
                                     Best Sellers
                                 </h3>
                                 <ul className="space-y-4">
-                                    {/* Demo items */}
-                                    {[1, 2, 3].map(i => (
-                                        <li key={i} className="flex gap-4 items-center group cursor-pointer">
-                                            <div className="w-16 h-16 bg-gray-100 rounded-md overflow-hidden flex-shrink-0">
-                                                {/* Placeholder img */}
-                                                <div className="w-full h-full bg-gray-200 group-hover:scale-110 transition-transform"></div>
-                                            </div>
-                                            <div>
-                                                <h4 className="font-[DM_Sans] font-bold text-[#262626] text-sm group-hover:text-[#C19D56] transition-colors">Coffee Product</h4>
-                                                <div className="text-xs text-[#797979] mt-1">
-                                                    <del className="mr-2">£240.00</del>
-                                                    <ins className="no-underline font-semibold text-[#C19D56]">£230.00</ins>
-                                                </div>
+                                    {['Dispensing Tray', 'Coffee Capsule', 'Dolce Gusto', 'Measuring Cup'].map((item) => (
+                                        <li key={item}>
+                                            <a className="text-sm sm:text-base font-bold text-[#262626] font-[DM_Sans] hover:text-[#C19D56] transition-colors block">
+                                                {item}
+                                            </a>
+                                            <div className="flex gap-2 text-xs sm:text-sm mt-1">
+                                                <del className="text-[#797979]">£240.00</del>
+                                                <ins className="text-[#C19D56] no-underline font-semibold">£230.00</ins>
                                             </div>
                                         </li>
                                     ))}
                                 </ul>
                             </div>
                         </div>
-                    </aside>
 
-                    {/* --- MAIN CONTENT --- */}
-                    <main className="w-full lg:w-3/4 flex flex-col">
+                        {/* --- MAIN CONTENT --- */}
+                        {/* Desktop: Chiếm 75% (w-3/4). Flex-col để chứa Toolbar + Grid + Pagination */}
+                        <div className="w-full lg:w-3/4 flex flex-col">
 
-                        {/* Toolbar: Sorting & Counting */}
-                        <div className="bg-white p-4 rounded-lg border border-gray-100 shadow-sm flex flex-col sm:flex-row justify-between items-center gap-4 mb-6">
-                            {(() => {
-                                if (!products || products.length === 0) return <p className="text-sm text-gray-500">No results</p>;
-                                const from = meta ? (meta.currentPage - 1) * meta.perPage + 1 : 0;
-                                const to = from + products.length - 1;
-                                return (
-                                    <p className="text-sm text-[#797979] font-[DM_Sans]">
-                                        Showing <span className="text-black font-semibold">{from}–{to}</span> of <span className="text-black font-semibold">{meta?.total || 0}</span>
-                                    </p>
-                                );
-                            })()}
+                            {/* Toolbar: Showing + Select */}
+                            <div className="flex flex-col sm:flex-row justify-between items-center gap-4 py-4 border-b border-gray-100 mb-6">
+                                {(() => {
+                                    if (!products || products.length === 0) return <p className="text-sm text-gray-500">No products found</p>;
+                                    const from = meta ? (meta.currentPage - 1) * meta.perPage + 1 : 0;
+                                    const to = from + products.length - 1;
+                                    return (
+                                        <p className="text-sm text-[#797979] font-[DM_Sans]">
+                                            Showing <span className="text-[#111] font-medium">{from}–{to}</span> of <span className="text-[#111] font-medium">{meta?.total || 0}</span> results
+                                        </p>
+                                    );
+                                })()}
 
-                            <div className="w-full sm:w-auto">
-                                <select
-                                    className="w-full sm:w-48 text-sm border-gray-200 rounded-md px-3 py-2 outline-none focus:border-[#C19D56] bg-gray-50 cursor-pointer"
-                                    defaultValue="createdAt"
-                                    value={sortBy}
-                                    onChange={handleSortChange}
-                                >
-                                    <option value="createdAt">Default sorting</option>
-                                    <option value="-createdAt">Newest items</option>
-                                    <option value="priceLow">Price: Low to High</option>
-                                    <option value="priceHigh">Price: High to Low</option>
-                                </select>
+                                <form className="w-full sm:w-auto">
+                                    <select
+                                        className="w-full sm:w-auto text-sm border border-gray-200 rounded px-3 py-2 outline-none bg-white cursor-pointer hover:border-[#C19D56] focus:border-[#C19D56] transition-colors"
+                                        defaultValue="createdAt"
+                                        value={sortBy}
+                                        onChange={handleSortChange}
+                                    >
+                                        <option value="createdAt">Default sorting</option>
+                                        <option value="-createdAt">Sort by latest</option>
+                                        <option value="priceLow">Price: Low to High</option>
+                                        <option value="priceHigh">Price: High to Low</option>
+                                    </select>
+                                </form>
                             </div>
-                        </div>
 
-                        {/* Product List */}
-                        {loading ? (
-                            <div className="flex justify-center items-center h-60">
-                                <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-[#C19D56]"></div>
-                            </div>
-                        ) : (
-                            // GRID RESPONSIVE: Mobile 2 cột (gap nhỏ), Tablet 3 cột, Desktop 3 cột
-                            <ul className="grid grid-cols-2 md:grid-cols-3 gap-3 sm:gap-6">
-                                {Array.isArray(products) && products?.length > 0 ? (
-                                    products.map((product) => (
-                                        <li
-                                            key={product.id}
-                                            className="group relative bg-white border border-gray-100 rounded-lg overflow-hidden hover:shadow-xl hover:border-[#C19D56]/30 transition-all duration-300"
-                                        >
-                                            <Link href={`/product/${product.id}`} className="block h-full flex flex-col">
-
-                                                {/* Image Container - Aspect Square (Vuông) để đều nhau */}
-                                                <div className="relative w-full aspect-square overflow-hidden bg-gray-50">
-                                                    <img
-                                                        src={product.thumbnail || "/images/placeholder.png"}
-                                                        alt={product.name}
-                                                        className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
-                                                    />
-
-                                                    {/* Add to Cart Button (Mobile: Hiện icon, Desktop: Hiện nút khi hover) */}
-                                                    <div className="absolute bottom-4 left-0 right-0 flex justify-center opacity-0 group-hover:opacity-100 transition-all duration-300 translate-y-4 group-hover:translate-y-0 px-4">
-                                                        <button
-                                                            onClick={(e) => {
-                                                                e.preventDefault();
-                                                                handleAddToCart(product);
-                                                            }}
-                                                            className="w-full sm:w-auto bg-white text-[#111] hover:bg-[#C19D56] hover:text-white font-bold py-2 px-6 rounded shadow-lg text-sm transition-colors flex items-center justify-center gap-2 whitespace-nowrap"
-                                                        >
-                                                            <span className="hidden sm:inline">Add to cart</span>
-                                                            <span className="sm:hidden text-lg">+</span> {/* Mobile chỉ hiện dấu + cho gọn */}
-                                                        </button>
-                                                    </div>
-                                                </div>
-
-                                                {/* Content */}
-                                                <div className="p-3 sm:p-5 flex flex-col gap-1 sm:gap-2 flex-grow">
-                                                    {/* Category (Optional) */}
-                                                    <span className="text-[10px] sm:text-xs text-gray-400 uppercase tracking-widest font-bold">Coffee</span>
-
-                                                    <h2 className="text-sm sm:text-base font-[DM_Sans] font-bold text-[#262626] group-hover:text-[#C19D56] transition line-clamp-2 min-h-[40px] sm:min-h-[48px]">
-                                                        {product.name}
-                                                    </h2>
-
-                                                    <div className="mt-auto pt-2 flex items-center gap-2">
-                                                        <span className="text-[#C19D56] font-bold text-sm sm:text-lg">
-                                                            {Number(product.price).toLocaleString('vi-VN')} đ
-                                                        </span>
-                                                        {/* Demo discount */}
-                                                        <del className="text-xs text-gray-400">
-                                                            {(Number(product.price) * 1.2).toLocaleString('vi-VN')} đ
-                                                        </del>
-                                                    </div>
-                                                </div>
-                                            </Link>
-                                        </li>
-                                    ))
-                                ) : (
-                                    <div className="col-span-full py-16 text-center bg-white rounded-lg border border-dashed border-gray-300">
-                                        <p className="text-gray-500 font-[DM_Sans]">Không tìm thấy sản phẩm nào.</p>
-                                    </div>
-                                )}
-                            </ul>
-                        )}
-
-                        {/* Pagination */}
-                        {meta && meta.lastPage > 1 && (
-                            <nav className="flex justify-center mt-12">
-                                <ul className="flex flex-wrap justify-center gap-2">
-                                    {/* Prev Button */}
-                                    <li>
-                                        <button
-                                            disabled={meta.currentPage === 1}
-                                            onClick={() => fetchProducts(meta.currentPage - 1)}
-                                            className={`w-10 h-10 flex items-center justify-center rounded border transition-colors
-                                        ${meta.currentPage === 1 ? 'border-gray-100 text-gray-300' : 'border-gray-300 hover:border-[#C19D56] hover:text-[#C19D56]'}`}
-                                        >
-                                            ←
-                                        </button>
-                                    </li>
-
-                                    {/* Page Numbers */}
-                                    {Array.from({ length: meta.lastPage }, (_, i) => i + 1).map((pageNumber) => (
-                                        <li key={pageNumber}>
-                                            <button
-                                                onClick={() => fetchProducts(pageNumber)}
-                                                className={`w-10 h-10 flex items-center justify-center rounded font-medium transition-all
-                                            ${Number(pageNumber) === Number(meta.currentPage)
-                                                        ? 'bg-[#C19D56] text-white shadow-md transform scale-105'
-                                                        : 'bg-white text-gray-600 hover:bg-gray-50'}`}
+                            {/* Content Grid */}
+                            {loading ? (
+                                <div className="flex justify-center items-center h-40">
+                                    <p className="text-gray-500">Đang tải dữ liệu...</p>
+                                </div>
+                            ) : (
+                                // RESPONSIVE GRID:
+                                // Mobile: 2 cột (grid-cols-2) - Đỡ phải cuộn nhiều
+                                // Tablet: 3 cột (md:grid-cols-3)
+                                // Desktop lớn: 3 cột hoặc 4 cột tùy thích (ở đây để 3 cho ảnh to đẹp)
+                                <ul className="grid grid-cols-2 md:grid-cols-3 gap-x-4 gap-y-8 sm:gap-x-6 sm:gap-y-10">
+                                    {Array.isArray(products) && products?.length > 0 ? (
+                                        products.map((product) => (
+                                            <li
+                                                key={product.id}
+                                                className="group relative flex flex-col gap-3"
                                             >
-                                                {pageNumber}
+                                                <a href="#" className="block w-full">
+                                                    {/* Ảnh vuông (Aspect Square) - Giúp ảnh đều nhau 100% */}
+                                                    <div className="relative w-full aspect-square overflow-hidden rounded-lg bg-[#f9f9f9] border border-gray-100 group-hover:border-[#C19D56]/50 transition-colors">
+                                                        <img
+                                                            src={product.thumbnail || "/images/placeholder.png"}
+                                                            alt={product.name}
+                                                            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                                                        />
+
+                                                        {/* Nút Add to Cart: Hiện lên khi hover */}
+                                                        <div className="absolute inset-x-0 bottom-0 p-4 opacity-0 group-hover:opacity-100 translate-y-4 group-hover:translate-y-0 transition-all duration-300 flex justify-center">
+                                                            <button
+                                                                className="bg-white text-[#111] hover:bg-[#C19D56] hover:text-white font-bold py-2 px-4 rounded shadow-lg text-xs sm:text-sm whitespace-nowrap"
+                                                                onClick={(e) => {
+                                                                    e.preventDefault();
+                                                                    handleAddToCart(product);
+                                                                }}
+                                                            >
+                                                                Add to cart
+                                                            </button>
+                                                        </div>
+                                                    </div>
+
+                                                    {/* Thông tin sản phẩm */}
+                                                    <div className="mt-3 text-center px-1">
+                                                        <h2 className="text-sm sm:text-base font-[DM_Sans] font-bold text-[#262626] group-hover:text-[#C19D56] transition line-clamp-2 h-[40px] sm:h-[48px] leading-tight">
+                                                            {product.name}
+                                                        </h2>
+                                                        <p className="text-[#C19D56] font-bold mt-1 text-sm sm:text-base">
+                                                            {Number(product.price).toLocaleString('vi-VN')} đ
+                                                        </p>
+                                                    </div>
+                                                </a>
+                                            </li>
+                                        ))
+                                    ) : (
+                                        <p className="col-span-full text-center text-gray-500 py-10">
+                                            Không tìm thấy sản phẩm nào.
+                                        </p>
+                                    )}
+                                </ul>
+                            )}
+
+                            {/* Pagination Section */}
+                            {meta && meta.lastPage > 1 && (
+                                <nav className="flex justify-center mt-12">
+                                    <ul className="flex gap-2 items-center">
+                                        {/* Prev */}
+                                        <li>
+                                            <button
+                                                disabled={meta.currentPage === 1}
+                                                onClick={() => fetchProducts(meta.currentPage - 1)}
+                                                className={`w-9 h-9 sm:w-10 sm:h-10 flex items-center justify-center rounded border border-gray-200 transition-colors
+                                            ${meta.currentPage === 1 ? 'text-gray-300 cursor-not-allowed' : 'text-[#111] hover:bg-[#C19D56] hover:text-white hover:border-[#C19D56]'}`}
+                                            >
+                                                &#8592;
                                             </button>
                                         </li>
-                                    ))}
-
-                                    {/* Next Button */}
-                                    <li>
-                                        <button
-                                            disabled={meta.currentPage === meta.lastPage}
-                                            onClick={() => fetchProducts(meta.currentPage + 1)}
-                                            className={`w-10 h-10 flex items-center justify-center rounded border transition-colors
-                                        ${meta.currentPage === meta.lastPage ? 'border-gray-100 text-gray-300' : 'border-gray-300 hover:border-[#C19D56] hover:text-[#C19D56]'}`}
-                                        >
-                                            →
-                                        </button>
-                                    </li>
-                                </ul>
-                            </nav>
-                        )}
-                    </main>
+                                        {/* Pages */}
+                                        {Array.from({ length: meta.lastPage }, (_, i) => i + 1).map((pageNumber) => (
+                                            <li key={pageNumber}>
+                                                <button
+                                                    onClick={() => fetchProducts(pageNumber)}
+                                                    className={`w-9 h-9 sm:w-10 sm:h-10 flex items-center justify-center rounded border transition-colors font-medium text-sm
+                                                ${Number(pageNumber) === Number(meta.currentPage)
+                                                            ? 'bg-[#111] !text-white border-[#111]'
+                                                            : 'text-[#111] border-gray-200 hover:bg-[#C19D56] hover:text-white hover:border-[#C19D56]'}`}
+                                                >
+                                                    {pageNumber}
+                                                </button>
+                                            </li>
+                                        ))}
+                                        {/* Next */}
+                                        <li>
+                                            <button
+                                                disabled={meta.currentPage === meta.lastPage}
+                                                onClick={() => fetchProducts(meta.currentPage + 1)}
+                                                className={`w-9 h-9 sm:w-10 sm:h-10 flex items-center justify-center rounded border border-gray-200 transition-colors
+                                            ${meta.currentPage === meta.lastPage ? 'text-gray-300 cursor-not-allowed' : 'text-[#111] hover:bg-[#C19D56] hover:text-white hover:border-[#C19D56]'}`}
+                                            >
+                                                &#8594;
+                                            </button>
+                                        </li>
+                                    </ul>
+                                </nav>
+                            )}
+                        </div>
+                    </div>
                 </div>
             </div>
         </ConfigProvider>
