@@ -1,5 +1,5 @@
-import ImageBackGround from "@/components/componentShop/background";
-import BodyShop from "@/components/componentShop/bodyShop";
+import ImageBackGround from "@/components/componentsRoot/componentShop/background";
+import BodyShop from "@/components/componentsRoot/componentShop/bodyShop";
 
 
 const ShopPage = () => {

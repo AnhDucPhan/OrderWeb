@@ -11,8 +11,8 @@ import { IoIosArrowDown } from "react-icons/io";
 import { RxAvatar } from "react-icons/rx";
 import { useSession } from "next-auth/react";
 
-import Login from "../auth/login";
-import Profile from "../auth/profile";
+import Login from "../../auth/login";
+import Profile from "../../auth/profile";
 import { useDispatch } from "react-redux";
 import { openProfile } from "@/lib/features/ui/uiSlice";
 

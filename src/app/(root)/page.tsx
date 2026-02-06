@@ -1,8 +1,8 @@
-import HomePageBackGround from "@/components/componentHomePage/homePageBackGround";
-import AboutUs from "@/components/componentHomePage/aboutUsHomePage";
-import WhyChooseUs from "@/components/componentHomePage/whyChooseUs";
-import Rating from "@/components/componentHomePage/rate";
-import ListExpert from "@/components/componentHomePage/listExpert";
+import HomePageBackGround from "@/components/componentsRoot/componentHomePage/homePageBackGround";
+import AboutUs from "@/components/componentsRoot/componentHomePage/aboutUsHomePage";
+import WhyChooseUs from "@/components/componentsRoot/componentHomePage/whyChooseUs";
+import Rating from "@/components/componentsRoot/componentHomePage/rate";
+import ListExpert from "@/components/componentsRoot/componentHomePage/listExpert";
 
 export default function Page() {
   return (

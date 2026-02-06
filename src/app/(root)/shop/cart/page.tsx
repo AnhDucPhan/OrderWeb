@@ -1,5 +1,5 @@
-import ImageBackGround from "@/components/componentShop/background";
-import CartComponent from "@/components/componentShop/cart";
+import ImageBackGround from "@/components/componentsRoot/componentShop/background";
+import CartComponent from "@/components/componentsRoot/componentShop/cart";
 
 
 
