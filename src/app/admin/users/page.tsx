@@ -5,7 +5,7 @@ import UserManagementComp from "@/components/componentsAdmin/componentsBody/Mana
 const UserManagement = () => {
     return (
         <div>
-            <UserManagementComp/>
+            <UserManagementComp />
         </div>
     )
 }

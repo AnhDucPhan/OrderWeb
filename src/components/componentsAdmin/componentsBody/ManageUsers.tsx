@@ -3,15 +3,28 @@ import { Button } from "@/components/ui/button"
 import { FacetedFilter } from "@/components/ui/data-table-faceted-filter"
 import { Input } from "@/components/ui/input"
 import { Search } from "lucide-react"
-import { Circle, User, Shield, Plus } from "lucide-react"
+import { Circle, User as UserIcon, Shield, Plus } from "lucide-react"
 import { UserTable } from "../uiAdmin/usersTable"
 import { AddUserModal } from "../uiAdmin/AddUserModal"
+import { useState } from "react"
+import { useGetUsersQuery, User } from "@/services/userApi"
 
 const UserManagementComp = () => {
+    const [openModal, setOpenModal] = useState(false)
+    const [selectedUser, setSelectedUser] = useState<User | null>(null)
+
+    const handleCreate = () => {
+        setSelectedUser(null) // Null = Add Mode
+        setOpenModal(true)
+    }
+
+    const handleEdit = (user: User) => {
+        setSelectedUser(user) // Có data = Edit Mode
+        setOpenModal(true)
+    }
 
     const roles = [
         { label: "Admin", value: "admin", icon: Shield },
-        { label: "User", value: "user", icon: User },
         { label: "Guest", value: "guest", icon: Circle },
     ]
 
@@ -49,10 +62,9 @@ const UserManagementComp = () => {
                         <FacetedFilter title="Status" options={statuses} />
                     </div>
                     <div>
-                        {/* 👇 XÓA nút Button cũ đi, thay bằng dòng này */}
-                        <AddUserModal onSuccess={() => {
-                            console.log("Reload lại bảng user tại đây")
-                        }} />
+                        <AddUserModal
+
+                        />
                     </div>
                 </div>
 

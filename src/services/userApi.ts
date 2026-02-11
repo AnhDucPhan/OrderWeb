@@ -7,13 +7,16 @@ export interface User {
   name: string;
   email: string;
   role: string;
+  phoneNumber: string;
+  avatar?: string;
+  createdAt: string;
 }
 
 export const userApi = createApi({
   reducerPath: 'userApi', // Tên định danh trong Store
-  
+
   // 1. Cấu hình Base URL và Headers
-  baseQuery: fetchBaseQuery({ 
+  baseQuery: fetchBaseQuery({
     baseUrl: 'http://localhost:8386',
     prepareHeaders: (headers) => {
       // Nếu có token thì nhét vào đây tự động
@@ -24,17 +27,17 @@ export const userApi = createApi({
   }),
 
   // 2. QUAN TRỌNG: Định nghĩa các Nhãn (Tag) để quản lý Cache
-  tagTypes: ['Users'], 
+  tagTypes: ['Users'],
 
   endpoints: (builder) => ({
-    
+
     // A. Lấy danh sách (Query)
     getUsers: builder.query<User[], void>({
       query: () => '/users',
       // 👇 Dán nhãn "Users" vào dữ liệu trả về
-      providesTags: (result) => 
-        result 
-          ? [...result.map(({ id }) => ({ type: 'Users' as const, id })), 'Users'] 
+      providesTags: (result) =>
+        result
+          ? [...result.map(({ id }) => ({ type: 'Users' as const, id })), 'Users']
           : ['Users'],
     }),
 
@@ -46,10 +49,30 @@ export const userApi = createApi({
         body: formData, // Tự động xử lý FormData
       }),
       // 👇 QUAN TRỌNG NHẤT: Báo hiệu nhãn "Users" đã bị cũ, cần tải lại ngay!
-      invalidatesTags: ['Users'], 
+      invalidatesTags: ['Users'],
+    }),
+    updateUser: builder.mutation<User, { id: number | string; formData: FormData }>({
+      query: ({ id, formData }) => ({
+        url: `/users/${id}`, // 👉 Gọi vào endpoint PATCH /users/:id
+        method: 'PATCH',     // 👉 Dùng method PATCH
+        body: formData,
+      }),
+      invalidatesTags: ['Users'], // 👉 Sửa xong thì báo danh sách "Users" tự load lại
+    }),
+    deleteUser: builder.mutation<void, number | string>({
+      query: (id) => ({
+        url: `/users/${id}`,
+        method: 'DELETE',
+      }),
+      // 👇 Quan trọng: Xóa xong thì báo danh sách cũ rồi, load lại đi!
+      invalidatesTags: ['Users'],
     }),
   }),
 })
 
 // 3. Tự động sinh ra Hooks để dùng trong Component
-export const { useGetUsersQuery, useCreateUserMutation } = userApi
+export const {
+  useGetUsersQuery,
+  useCreateUserMutation,
+  useUpdateUserMutation,
+  useDeleteUserMutation } = userApi
