@@ -67,6 +67,14 @@ export const userApi = createApi({
       // 👇 Quan trọng: Xóa xong thì báo danh sách cũ rồi, load lại đi!
       invalidatesTags: ['Users'],
     }),
+
+    getUserById: builder.query<User, number | string>({
+      query: (id) => `/users/${id}`, // Gọi vào endpoint GET /users/:id
+      
+      // Dán nhãn cụ thể cho từng User ID
+      // Để khi update user số 1, thì chỉ cache của user số 1 bị reload (nếu muốn tối ưu)
+      providesTags: (result, error, id) => [{ type: 'Users', id }],
+    }),
   }),
 })
 
@@ -75,4 +83,6 @@ export const {
   useGetUsersQuery,
   useCreateUserMutation,
   useUpdateUserMutation,
-  useDeleteUserMutation } = userApi
+  useDeleteUserMutation,
+  useGetUserByIdQuery,
+ } = userApi

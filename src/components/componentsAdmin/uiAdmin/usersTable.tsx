@@ -37,6 +37,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
+import { ViewUserModal } from "./UserProfile"
 
 export function UserTable() {
   const { data: users, isLoading, error } = useGetUsersQuery()
@@ -45,6 +46,7 @@ export function UserTable() {
   const [editingUser, setEditingUser] = useState<User | null>(null)
   const [deleteId, setDeleteId] = useState<number | string | null>(null)
   const [deleteUser, { isLoading: isDeleting }] = useDeleteUserMutation()
+  const [viewingUser, setViewingUser] = useState<User | null>(null)
 
   // Xử lý loading state
   if (isLoading) {
@@ -156,7 +158,7 @@ export function UserTable() {
                     <DropdownMenuContent align="end">
                       <DropdownMenuLabel>Actions</DropdownMenuLabel>
 
-                      <DropdownMenuItem onClick={() => console.log("View profile")}>
+                      <DropdownMenuItem onClick={() => setViewingUser(user)}>
                         <UserIcon className="mr-2 h-4 w-4" /> View Profile
                       </DropdownMenuItem>
 
@@ -185,6 +187,12 @@ export function UserTable() {
         open={!!editingUser}
         user={editingUser}
         onClose={() => setEditingUser(null)}
+      />
+
+      <ViewUserModal 
+        open={!!viewingUser}
+        user={viewingUser}
+        onClose={() => setViewingUser(null)}
       />
 
       <AlertDialog open={!!deleteId} onOpenChange={(open) => !open && setDeleteId(null)}>
