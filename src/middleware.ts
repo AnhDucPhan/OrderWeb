@@ -4,22 +4,18 @@ import { auth } from "@/auth"; // Import hàm auth từ file cấu hình của b
 export default auth((req) => {
     const isLoggedIn = !!req.auth;
     const role = req.auth?.user?.role; // Lấy role từ session (đã config ở bước trước)
-    console.log("LOGIN STATUS:", isLoggedIn);
-    console.log("USER ROLE:", role);
     const { nextUrl } = req;
 
     const isAdminRoute = nextUrl.pathname.startsWith('/admin');
     const isRootRoute = nextUrl.pathname === '/';
     const isAuthRoute = nextUrl.pathname.startsWith('/login') || nextUrl.pathname.startsWith('/register');
 
-    // 1. NẾU LÀ ADMIN ĐANG Ở TRANG CHỦ (ROOT)
-    // -> Tự động đá sang /admin dashboard
+   
     if (isRootRoute && isLoggedIn && role === 'ADMIN') {
         return NextResponse.redirect(new URL('/admin', nextUrl));
     }
 
-    // 2. BẢO VỆ ROUTE ADMIN
-    // Nếu cố vào /admin mà chưa login hoặc không phải admin -> Đá về trang chủ hoặc login
+    
     if (isAdminRoute) {
         if (!isLoggedIn) {
             return NextResponse.redirect(new URL('/', nextUrl));

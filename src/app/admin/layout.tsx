@@ -2,22 +2,14 @@
 
 import React, { useEffect, useState } from 'react';
 import { Layout, Menu, Button, theme, Spin, message } from 'antd';
-import {
-    MenuFoldOutlined,
-    MenuUnfoldOutlined,
-    DashboardOutlined,
-    UserOutlined,
-    ShoppingOutlined,
-    LogoutOutlined,
-} from '@ant-design/icons';
 import { useRouter, usePathname } from 'next/navigation';
-import Link from 'next/link';
 import { useSession, signOut } from 'next-auth/react';
+import { AppSidebar } from '@/components/componentsAdmin/uiAdmin/sidebar';
+import { SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
+import AdminHeader from '@/components/componentsAdmin/uiAdmin/header';
 
-const { Header, Sider, Content } = Layout;
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
-    const [collapsed, setCollapsed] = useState(false);
     const {
         token: { colorBgContainer, borderRadiusLG },
     } = theme.useToken();
@@ -44,86 +36,36 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         }
     }, [session, status, router]);
 
-    // Trong lúc đang check quyền hoặc chưa có session, hiện Loading để tránh lộ UI
     if (status === 'loading' || !session || session?.user?.role !== 'ADMIN') {
         return (
             <div className="h-screen flex items-center justify-center">
-                <Spin size="large" tip="Checking permission..." />
+                <Spin size="large" >
+                    <div>
+                    </div>
+                </Spin>
             </div>
         );
     }
 
-    // --- MENU ITEMS ---
-    const menuItems = [
-        {
-            key: '/admin',
-            icon: <DashboardOutlined />,
-            label: <Link href="/admin">Dashboard</Link>,
-        },
-        {
-            key: '/admin/products',
-            icon: <ShoppingOutlined />,
-            label: <Link href="/admin/products">Products</Link>,
-        },
-        {
-            key: '/admin/users',
-            icon: <UserOutlined />,
-            label: <Link href="/admin/users">Users</Link>,
-        },
-    ];
-
     return (
-        <Layout className="min-h-screen">
-            {/* Sidebar */}
-            <Sider trigger={null} collapsible collapsed={collapsed} theme="light">
-                <div className="h-16 flex items-center justify-center text-xl font-bold border-b border-gray-100">
-                    {collapsed ? 'AD' : 'MY ADMIN'}
-                </div>
-                <Menu
-                    theme="light"
-                    mode="inline"
-                    defaultSelectedKeys={[pathname]}
-                    selectedKeys={[pathname]}
-                    items={menuItems}
-                />
-            </Sider>
+        <SidebarProvider>
+            {/* XÓA class p-6 ở đây để khung bao phủ toàn màn hình */}
+            <div className="flex min-h-screen w-full">
 
-            <Layout>
-                {/* Header */}
-                <Header style={{ padding: 0, background: colorBgContainer }} className="flex justify-between items-center pr-6">
-                    <Button
-                        type="text"
-                        icon={collapsed ? <MenuUnfoldOutlined /> : <MenuFoldOutlined />}
-                        onClick={() => setCollapsed(!collapsed)}
-                        style={{ fontSize: '16px', width: 64, height: 64 }}
-                    />
+                {/* Sidebar sẽ dính sát lề trái */}
+                <AppSidebar />
 
-                    <div className="flex items-center gap-4">
-                        <span className="font-semibold">Hi, {session.user.name}</span>
-                        <Button
-                            type="text"
-                            danger
-                            icon={<LogoutOutlined />}
-                            onClick={() => signOut({ callbackUrl: '/' })}
-                        >
-                            Logout
-                        </Button>
+                <main className="flex flex-1 flex-col w-full transition-all duration-300 ease-in-out">
+
+                    <AdminHeader />
+
+                    {/* Chỉ thêm padding ở khu vực nội dung này thôi */}
+                    {/* Bạn có thể tăng p-4 lên p-6 ở đây nếu muốn nội dung thoáng hơn */}
+                    <div className="flex-1 p-6 bg-gray-50/50">
+                        {children}
                     </div>
-                </Header>
-
-                {/* Nội dung trang con sẽ nằm ở đây */}
-                <Content
-                    style={{
-                        margin: '24px 16px',
-                        padding: 24,
-                        minHeight: 280,
-                        background: colorBgContainer,
-                        borderRadius: borderRadiusLG,
-                    }}
-                >
-                    {children}
-                </Content>
-            </Layout>
-        </Layout>
+                </main>
+            </div>
+        </SidebarProvider>
     );
 }

@@ -52,7 +52,7 @@ const Header = () => {
     };
     const menuItems = [
         {
-            image: "/images/Menu-1.jpg", // thư mục public/images
+            image: "/images/Menu-1.jpg", 
             title: "Blended Ice Cream"
         },
         {

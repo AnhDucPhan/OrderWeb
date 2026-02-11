@@ -1,8 +1,9 @@
 // app/(root)/layout.tsx
 import React from 'react';
-import Header from '@/components/componentsRoot/componentHomePage/header';
-import Footer from '@/components/componentsRoot/componentHomePage/footer';
-import ButtonCart from '@/components/componentsRoot/ui/btnCart';
+
+import ButtonCart from '@/components/componentsRoot/uiRoot/btnCart';
+import Header from '@/components/componentsRoot/uiRoot/header';
+import Footer from '@/components/componentsRoot/uiRoot/footer';
 
 export default function ShopLayout({
     children,

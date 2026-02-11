@@ -1,8 +1,10 @@
 // app/layout.tsx
-import './globals.scss'
+import './globals.css'
 import { DM_Sans, Marcellus } from "next/font/google";
 import "antd/dist/reset.css";
 import Providers from '@/components/Providers'; // Giữ lại Provider nếu Admin cũng cần Redux/Auth
+import { Toaster } from "@/components/ui/sonner" //
+import StoreProvider from '@/lib/StoreProvider';
 
 const dmSans = DM_Sans({
   subsets: ["latin"],
@@ -30,10 +32,11 @@ export default function RootLayout({
     <html lang="en">
       <body className={`${dmSans.variable} ${marcellus.variable} flex flex-col min-h-screen`}>
         <Providers>
-            {/* Ở đây KHÔNG CÒN Header hay Footer nữa.
+          {/* Ở đây KHÔNG CÒN Header hay Footer nữa.
               Nó chỉ render children (có thể là layout con của user hoặc layout con của admin)
             */}
-            {children}
+          {children}
+          <Toaster position="top-right" richColors />
         </Providers>
       </body>
     </html>
