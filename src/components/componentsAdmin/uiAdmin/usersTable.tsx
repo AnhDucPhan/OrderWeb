@@ -20,12 +20,13 @@ import {
   DropdownMenuLabel,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { MoreHorizontal, Shield, User as UserIcon, Pencil, Trash2 } from "lucide-react"
+import { MoreHorizontal, Shield, User as UserIcon, Pencil, Trash2, KeyRound, Ban, CheckCircle } from "lucide-react"
 import { Skeleton } from "@/components/ui/skeleton"
 import { useGetUsersQuery, User } from "@/services/userApi" // 👇 1. Import type User
 import { EditUserModal } from "./EditUserModal" // 👇 2. Import Modal Sửa
 import { useDeleteUserMutation } from "@/services/userApi"
 import { toast } from "sonner"
+import { useUpdateUserMutation } from "@/services/userApi"
 
 import {
   AlertDialog,
@@ -41,6 +42,9 @@ import { ViewUserModal } from "./UserProfile"
 
 export function UserTable() {
   const { data: users, isLoading, error } = useGetUsersQuery()
+  const [updateUser, { isLoading: isUpdating }] = useUpdateUserMutation()
+
+  console.log("Danh sách User từ API:", users);
 
   // 👇 3. State quản lý user đang sửa (Null = đóng, Có data = mở)
   const [editingUser, setEditingUser] = useState<User | null>(null)
@@ -76,6 +80,23 @@ export function UserTable() {
   // Xử lý error state
   if (error) {
     return <div className="text-red-500 p-4 border border-red-200 rounded">Error loading users</div>
+  }
+
+  const handleToggleStatus = async (user: User) => {
+    const formData = new FormData();
+
+    // 👇 LOGIC ĐẢO NGƯỢC CHUỖI
+    // Nếu đang Active thì gửi Inactive, ngược lại thì gửi Active
+    const newStatus = user.status === "Active" ? "Inactive" : "Active";
+
+    formData.append("status", newStatus);
+
+    try {
+      await updateUser({ id: user.id, formData }).unwrap();
+      toast.success(`Đã chuyển trạng thái thành: ${newStatus}`);
+    } catch (error) {
+      toast.error("Lỗi cập nhật trạng thái");
+    }
   }
 
   return (
@@ -138,12 +159,12 @@ export function UserTable() {
 
                 {/* Status */}
                 <TableCell>
-                  <Badge
-                    variant="default"
-                    className="bg-green-500 hover:bg-green-600"
-                  >
-                    Active
-                  </Badge>
+                  {/* So sánh chuỗi để hiển thị màu */}
+                  {user.status === "Active" ? (
+                    <Badge className="bg-green-500">Active</Badge>
+                  ) : (
+                    <Badge className="bg-red-500" variant="secondary">Inactive</Badge>
+                  )}
                 </TableCell>
 
                 {/* Actions */}
@@ -165,6 +186,20 @@ export function UserTable() {
                       {/* 👇 4. Gắn sự kiện mở modal vào đây */}
                       <DropdownMenuItem onClick={() => setEditingUser(user)}>
                         <Pencil className="mr-2 h-4 w-4" /> Edit Detail
+                      </DropdownMenuItem>
+
+                      <DropdownMenuItem onClick={() => handleToggleStatus(user)}>
+                        {user.status === "Active" ? (
+                          <>
+                            <Ban className="mr-2 h-4 w-4 text-orange-500" />
+                            <span className="text-orange-500">Vô hiệu hóa</span>
+                          </>
+                        ) : (
+                          <>
+                            <CheckCircle className="mr-2 h-4 w-4 text-green-600" />
+                            <span className="text-green-600">Kích hoạt lại</span>
+                          </>
+                        )}
                       </DropdownMenuItem>
 
                       <DropdownMenuItem
@@ -189,7 +224,7 @@ export function UserTable() {
         onClose={() => setEditingUser(null)}
       />
 
-      <ViewUserModal 
+      <ViewUserModal
         open={!!viewingUser}
         user={viewingUser}
         onClose={() => setViewingUser(null)}

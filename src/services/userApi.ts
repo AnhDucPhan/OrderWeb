@@ -10,6 +10,7 @@ export interface User {
   phoneNumber: string;
   avatar?: string;
   createdAt: string;
+  status: string;
 }
 
 export const userApi = createApi({

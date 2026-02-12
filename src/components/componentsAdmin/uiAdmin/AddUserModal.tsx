@@ -90,7 +90,6 @@ export function AddUserModal() {
                          <SelectContent>
                              <SelectItem value="ADMIN">Admin</SelectItem>
                              <SelectItem value="STAFF">Staff</SelectItem>
-                             <SelectItem value="USER">User</SelectItem>
                          </SelectContent>
                     </Select>
                     <FormMessage />
@@ -107,7 +106,7 @@ export function AddUserModal() {
             )} />
 
             <DialogFooter>
-               <Button type="submit" disabled={isLoading}>{isLoading ? <Loader2 className="animate-spin" /> : "Tạo mới"}</Button>
+               <Button type="submit" className="text-white!" disabled={isLoading}>{isLoading ? <Loader2 className="animate-spin " /> : "Tạo mới"}</Button>
             </DialogFooter>
           </form>
         </Form>
