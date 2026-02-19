@@ -23,7 +23,6 @@ import {
 import { MoreHorizontal, Shield, User as UserIcon, Pencil, Trash2, KeyRound, Ban, CheckCircle } from "lucide-react"
 import { Skeleton } from "@/components/ui/skeleton"
 import { useGetUsersQuery, User } from "@/services/userApi" // 👇 1. Import type User
-import { EditUserModal } from "./EditUserModal" // 👇 2. Import Modal Sửa
 import { useDeleteUserMutation } from "@/services/userApi"
 import { toast } from "sonner"
 import { useUpdateUserMutation } from "@/services/userApi"
@@ -39,6 +38,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
 import { ViewUserModal } from "./UserProfile"
+import EditUserModal from "./EditUserModal"
 
 export function UserTable() {
   const { data: users, isLoading, error } = useGetUsersQuery()
@@ -128,7 +128,8 @@ export function UserTable() {
                   <div className="flex items-center gap-3">
                     <Avatar className="h-9 w-9">
                       {user.avatar ? (
-                        <AvatarImage src={`http://localhost:8386/uploads/${user.avatar}`} alt={user.name} />
+                        // ✅ ĐÚNG: Truyền thẳng user.avatar vì nó đã là 1 link Cloudinary hoàn chỉnh
+                        <AvatarImage src={user.avatar} alt={user.name} className="object-cover" />
                       ) : (
                         <AvatarImage src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${user.name}`} />
                       )}

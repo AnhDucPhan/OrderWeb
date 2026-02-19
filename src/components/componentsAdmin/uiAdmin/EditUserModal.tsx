@@ -28,7 +28,7 @@ interface EditProps {
     onClose: () => void;
 }
 
-export function EditUserModal({ user, open, onClose }: EditProps) {
+const EditUserModal = ({ user, open, onClose }: EditProps) => {
     const [updateUser, { isLoading }] = useUpdateUserMutation()
 
     const form = useForm<z.infer<typeof editSchema>>({
@@ -54,13 +54,20 @@ export function EditUserModal({ user, open, onClose }: EditProps) {
     async function onSubmit(values: z.infer<typeof editSchema>) {
         if (!user) return
         const formData = new FormData()
+
         formData.append("name", values.name)
         formData.append("email", values.email)
         formData.append("role", values.role)
         formData.append("phoneNumber", values.phoneNumber)
 
-        if (values.password) formData.append("password", values.password)
-        if (values.avatar && values.avatar.length > 0) formData.append("avatar", values.avatar[0])
+        if (values.password) {
+            formData.append("password", values.password)
+        }
+
+        // 👇 SỬA ĐOẠN NÀY: Kiểm tra chính xác xem có phải là File không
+        if (values.avatar instanceof File) {
+            formData.append("avatar", values.avatar)
+        }
 
         try {
             await updateUser({ id: user.id, formData }).unwrap()
@@ -68,9 +75,9 @@ export function EditUserModal({ user, open, onClose }: EditProps) {
             onClose()
         } catch (error: any) {
             toast.error("Lỗi cập nhật")
+            console.error("Update Error:", error); // Log ra để xem lỗi từ BE nếu có
         }
     }
-
     return (
         <Dialog open={open} onOpenChange={onClose}>
             <DialogContent className="sm:max-w-[500px]">
@@ -88,11 +95,11 @@ export function EditUserModal({ user, open, onClose }: EditProps) {
                         </div>
 
                         <FormField control={form.control} name="email" render={({ field }) => (
-                            <FormItem><FormLabel>Email</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
+                            <FormItem><FormLabel>Email</FormLabel><FormControl><Input {...field} disabled/></FormControl><FormMessage /></FormItem>
                         )} />
 
                         <FormField control={form.control} name="password" render={({ field }) => (
-                            <FormItem><FormLabel>Mật khẩu (Để trống nếu không đổi)</FormLabel><FormControl><Input type="password" placeholder="********" {...field} /></FormControl><FormMessage /></FormItem>
+                            <FormItem><FormLabel>Mật khẩu (Để trống nếu không đổi)</FormLabel><FormControl><Input type="password" placeholder="********" {...field} disabled/></FormControl><FormMessage /></FormItem>
                         )} />
 
                         <FormField control={form.control} name="role" render={({ field }) => (
@@ -103,24 +110,36 @@ export function EditUserModal({ user, open, onClose }: EditProps) {
                                     <SelectContent>
                                         <SelectItem value="ADMIN">Admin</SelectItem>
                                         <SelectItem value="STAFF">Staff</SelectItem>
-                                        <SelectItem value="USER">User</SelectItem>
                                     </SelectContent>
                                 </Select>
                                 <FormMessage />
                             </FormItem>
                         )} />
 
-                        <FormField control={form.control} name="avatar" render={({ field: { value, onChange, ...fieldProps } }) => (
-                            <FormItem>
-                                <FormLabel>Avatar</FormLabel>
-                                <FormControl>
-                                    <Input {...fieldProps} type="file" accept="image/*" onChange={(e) => onChange(e.target.files?.[0] ? e.target.files : null)} />
-                                </FormControl>
-                            </FormItem>
-                        )} />
+                        <FormField
+                            control={form.control}
+                            name="avatar"
+                            render={({ field: { value, onChange, ...fieldProps } }) => (
+                                <FormItem>
+                                    <FormLabel>Avatar</FormLabel>
+                                    <FormControl>
+                                        <Input
+                                            {...fieldProps}
+                                            type="file"
+                                            accept="image/*"
+                                            onChange={(e) => {
+                                                // 👇 Lấy thẳng đối tượng File thay vì FileList
+                                                const file = e.target.files?.[0];
+                                                onChange(file || undefined);
+                                            }}
+                                        />
+                                    </FormControl>
+                                </FormItem>
+                            )}
+                        />
 
                         <DialogFooter>
-                            <Button type="submit" disabled={isLoading}>{isLoading ? <Loader2 className="animate-spin" /> : "Lưu thay đổi"}</Button>
+                            <Button className="text-white!" type="submit" disabled={isLoading}>{isLoading ? <Loader2 className="animate-spin" /> : "Lưu thay đổi"}</Button>
                         </DialogFooter>
                     </form>
                 </Form>
@@ -128,3 +147,5 @@ export function EditUserModal({ user, open, onClose }: EditProps) {
         </Dialog>
     )
 }
+
+export default EditUserModal;
