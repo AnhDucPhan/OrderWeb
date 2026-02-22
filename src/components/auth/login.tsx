@@ -41,6 +41,7 @@ const Login = ({ openFormLogin, setOpenFormLogin }: LoginProps) => {
                 password: password,
                 redirect: false,
             });
+            console.log("Cục data Login Backend trả về:", res);
 
             if (res?.error) {
                 setErrorMsg("Email hoặc mật khẩu không chính xác!");

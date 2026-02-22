@@ -1,5 +1,6 @@
 // src/redux/services/userApi.ts
 import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react'
+import { getSession } from 'next-auth/react';
 
 // Định nghĩa kiểu User (như cũ)
 export interface User {
@@ -19,10 +20,14 @@ export const userApi = createApi({
   // 1. Cấu hình Base URL và Headers
   baseQuery: fetchBaseQuery({
     baseUrl: 'http://localhost:8386',
-    prepareHeaders: (headers) => {
+    prepareHeaders:  async (headers) => {
       // Nếu có token thì nhét vào đây tự động
-      // const token = localStorage.getItem('token')
-      // if (token) headers.set('authorization', `Bearer ${token}`)
+      const session: any = await getSession();
+      const token = session?.accessToken;
+      if (token) {
+        // 2. Cắt bỏ dấu ngoặc kép thừa (nếu có)
+        headers.set('authorization', `Bearer ${token}`);
+      }
       return headers
     },
   }),
@@ -71,7 +76,7 @@ export const userApi = createApi({
 
     getUserById: builder.query<User, number | string>({
       query: (id) => `/users/${id}`, // Gọi vào endpoint GET /users/:id
-      
+
       // Dán nhãn cụ thể cho từng User ID
       // Để khi update user số 1, thì chỉ cache của user số 1 bị reload (nếu muốn tối ưu)
       providesTags: (result, error, id) => [{ type: 'Users', id }],
@@ -86,4 +91,4 @@ export const {
   useUpdateUserMutation,
   useDeleteUserMutation,
   useGetUserByIdQuery,
- } = userApi
+} = userApi

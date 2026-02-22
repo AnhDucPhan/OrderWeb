@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState, useMemo } from "react"
+import React, { useState, useMemo, useEffect } from "react"
 import { addDays, startOfWeek, format } from "date-fns"
 import { vi } from "date-fns/locale"
 import { ChevronLeft, ChevronRight, CheckCircle2, Clock, XCircle, Search, Plus, Calendar, User as UserIcon, Edit, Trash2 } from "lucide-react"
@@ -8,34 +8,44 @@ import { ChevronLeft, ChevronRight, CheckCircle2, Clock, XCircle, Search, Plus, 
 import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Input } from "@/components/ui/input"
-import { ScrollArea } from "../uiAdmin/scroll-area"
+import { ScrollArea } from "../uiAdmin/scroll-area" // Chú ý kiểm tra lại đường dẫn này trong máy bạn
 import { Badge } from "@/components/ui/badge"
+import { Skeleton } from "@/components/ui/skeleton" // 👇 Thêm hiệu ứng loading
 
-// --- DỮ LIỆU MẪU ---
-const MOCK_USERS = [
-  { id: 1, name: "Nguyễn Đức Anh", role: "ADMIN", avatar: "" },
-  { id: 2, name: "Trần Thị Bích", role: "STAFF", avatar: "" },
-  { id: 3, name: "Lê Văn Cường", role: "STAFF", avatar: "" },
-]
+// 👇 1. Import hook lấy user thật từ Redux
+import { useGetUsersQuery, User } from "@/services/userApi"
+import { AddScheduleModal } from "../uiAdmin/AddScheduleModal"
 
-// Lưu ý mình đã đổi giờ để test hiệu ứng khối kéo dài
+// --- DỮ LIỆU MẪU LỊCH TRÌNH (Tạm thời giữ nguyên để test layout) ---
 const MOCK_SCHEDULES = [
-  { id: 101, userId: 1, startTime: new Date("2026-02-16T08:00:00"), endTime: new Date("2026-02-16T12:00:00"), status: "APPROVED" }, // 4 tiếng
-  { id: 102, userId: 1, startTime: new Date("2026-02-18T13:30:00"), endTime: new Date("2026-02-18T17:45:00"), status: "PENDING" },  // 4 tiếng 15 phút
-  { id: 103, userId: 2, startTime: new Date("2026-02-16T06:00:00"), endTime: new Date("2026-02-16T14:30:00"), status: "APPROVED" }, // 8 tiếng rưỡi
-  { id: 104, userId: 1, startTime: new Date("2026-02-20T18:00:00"), endTime: new Date("2026-02-20T23:30:00"), status: "REJECTED" }, // 5.5 tiếng tối
+  { id: 101, userId: 1, startTime: new Date("2026-02-16T08:00:00"), endTime: new Date("2026-02-16T12:00:00"), status: "APPROVED" },
+  { id: 102, userId: 1, startTime: new Date("2026-02-18T13:30:00"), endTime: new Date("2026-02-18T17:45:00"), status: "PENDING" },
+  { id: 103, userId: 2, startTime: new Date("2026-02-16T06:00:00"), endTime: new Date("2026-02-16T14:30:00"), status: "APPROVED" },
+  { id: 104, userId: 1, startTime: new Date("2026-02-20T18:00:00"), endTime: new Date("2026-02-20T23:30:00"), status: "REJECTED" },
 ]
 
-// Cấu hình Timeline (6h sáng đến 12h đêm)
 const START_HOUR = 6;
 const END_HOUR = 24;
-const HOUR_HEIGHT = 60; // Mỗi giờ cao 60px
+const HOUR_HEIGHT = 60;
 const HOURS_ARRAY = Array.from({ length: END_HOUR - START_HOUR + 1 }, (_, i) => i + START_HOUR);
 
 export function AdminScheduleBoard() {
-  const [currentDate, setCurrentDate] = useState(new Date("2026-02-16T00:00:00")) // Gắn cứng ngày để test Mock Data
+  // 👇 2. Gọi API lấy user thật
+  const { data: users = [], isLoading } = useGetUsersQuery();
+
+  const [currentDate, setCurrentDate] = useState(new Date("2026-02-16T00:00:00"))
   const [searchQuery, setSearchQuery] = useState("")
-  const [selectedUser, setSelectedUser] = useState(MOCK_USERS[0])
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+
+  // 👇 3. Đổi state thành User | null (Vì lúc đầu chưa có data)
+  const [selectedUser, setSelectedUser] = useState<User | null>(null)
+
+  // 👇 4. Tự động chọn user đầu tiên khi dữ liệu API tải xong
+  useEffect(() => {
+    if (users.length > 0 && !selectedUser) {
+      setSelectedUser(users[0]);
+    }
+  }, [users, selectedUser]);
 
   const startDate = startOfWeek(currentDate, { weekStartsOn: 1 })
   const weekDays = Array.from({ length: 7 }).map((_, i) => addDays(startDate, i))
@@ -43,17 +53,19 @@ export function AdminScheduleBoard() {
   const handlePrevWeek = () => setCurrentDate(addDays(currentDate, -7))
   const handleNextWeek = () => setCurrentDate(addDays(currentDate, 7))
 
+  // 👇 5. Tìm kiếm trên mảng users thật
   const filteredUsers = useMemo(() => {
-    if (!searchQuery.trim()) return MOCK_USERS;
-    return MOCK_USERS.filter(user =>
+    if (!searchQuery.trim()) return users;
+    return users.filter(user =>
       user.name.toLowerCase().includes(searchQuery.toLowerCase())
     );
-  }, [searchQuery]);
+  }, [searchQuery, users]);
 
   const getSchedulesForSelectedUser = (day: Date) => {
     if (!selectedUser) return [];
+    // Tạm thời vẫn lọc theo ID của Mock Schedule (cần đổi kiểu ID nếu ID của User là chuỗi)
     return MOCK_SCHEDULES.filter(
-      (s) => s.userId === selectedUser.id && s.startTime.toDateString() === day.toDateString()
+      (s) => s.userId === Number(selectedUser.id) && s.startTime.toDateString() === day.toDateString()
     )
   }
 
@@ -66,28 +78,21 @@ export function AdminScheduleBoard() {
     }
   }
 
-  // --- HÀM TÍNH TOÁN VỊ TRÍ VÀ ĐỘ DÀI CỦA KHỐI LỊCH ---
   const calculateBlockStyle = (startTime: Date, endTime: Date) => {
     const startHour = startTime.getHours() + startTime.getMinutes() / 60;
     const endHour = endTime.getHours() + endTime.getMinutes() / 60;
-
-    // Giới hạn trong khoảng 6:00 đến 24:00
     const clampedStart = Math.max(START_HOUR, Math.min(END_HOUR, startHour));
     const clampedEnd = Math.max(START_HOUR, Math.min(END_HOUR, endHour));
-
     const top = (clampedStart - START_HOUR) * HOUR_HEIGHT;
     const height = (clampedEnd - clampedStart) * HOUR_HEIGHT;
 
-    return {
-      top: `${top}px`,
-      height: `${height}px`
-    };
+    return { top: `${top}px`, height: `${height}px` };
   }
 
   return (
     <div className="flex gap-6 h-[calc(100vh-40px)] bg-gradient-to-br from-slate-100 to-slate-200 p-6 overflow-hidden">
-      
-      {/* Left Sidebar: User List */}
+
+      {/* CỘT TRÁI: Danh sách User */}
       <div className="w-[280px] flex-shrink-0 bg-white rounded-3xl shadow-2xl border border-slate-200/60 flex flex-col overflow-hidden backdrop-blur-sm">
         <div className="p-6 border-b bg-gradient-to-r from-slate-50 to-slate-100">
           <h2 className="font-bold text-lg text-slate-800 flex items-center gap-2 mb-4">
@@ -105,35 +110,55 @@ export function AdminScheduleBoard() {
           </div>
         </div>
 
-        <ScrollArea className="flex-1 p-4">
-          <div className="flex flex-col gap-3">
-            {filteredUsers.map((user) => {
-              const isActive = selectedUser?.id === user.id;
-              return (
-                <div
-                  key={user.id} onClick={() => setSelectedUser(user)}
-                  className={`flex items-center gap-3 p-4 rounded-2xl cursor-pointer transition-colors duration-150 ${isActive ? 'bg-blue-50' : 'bg-white hover:bg-slate-50'}`}
-                >
-                  <Avatar className="h-12 w-12 border-2 border-slate-200">
-                    <AvatarImage src={user.avatar} />
-                    <AvatarFallback className="bg-slate-100 text-slate-600 font-medium">
-                      {user.name.charAt(0)}
-                    </AvatarFallback>
-                  </Avatar>
-                  <div className="flex flex-col flex-1 overflow-hidden">
-                    <span className="font-semibold text-sm truncate text-slate-800">{user.name}</span>
-                    <Badge variant={user.role === 'ADMIN' ? 'default' : 'secondary'} className="text-xs mt-1 w-fit">
-                      {user.role}
-                    </Badge>
+        <div className="flex-1 p-4 overflow-y-auto">
+          <div className="flex flex-col gap-2">
+            {/* 👇 6. Hiển thị Skeleton nếu đang tải dữ liệu */}
+            {isLoading ? (
+              Array.from({ length: 5 }).map((_, i) => (
+                <div key={i} className="flex items-center gap-2 p-2">
+                  <Skeleton className="h-10 w-10 rounded-full" />
+                  <div className="space-y-2 flex-1">
+                    <Skeleton className="h-4 w-3/4" />
+                    <Skeleton className="h-3 w-1/2" />
                   </div>
                 </div>
-              )
-            })}
+              ))
+            ) : filteredUsers.length === 0 ? (
+              <div className="text-center text-slate-500 text-sm py-8">Không tìm thấy nhân viên.</div>
+            ) : (
+              filteredUsers.map((user) => {
+                const isActive = selectedUser?.id === user.id;
+                return (
+                  <div
+                    key={user.id} onClick={() => setSelectedUser(user)}
+                    className={`flex items-center gap-2 py-2 px-3 rounded-2xl cursor-pointer transition-colors duration-150 ${isActive ? 'bg-blue-50 ring-1 ring-blue-200' : 'bg-white hover:bg-slate-50'}`}
+                  >
+                    {/* Avatar (smaller for compact list) */}
+                    <Avatar className="h-10 w-10 border-2 border-slate-200">
+                      {user.avatar ? (
+                        <AvatarImage src={user.avatar} className="object-cover" />
+                      ) : (
+                        <AvatarImage src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${user.name}`} />
+                      )}
+                      <AvatarFallback className="bg-slate-100 text-slate-600 font-medium">
+                        {user.name?.charAt(0).toUpperCase()}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="flex flex-col flex-1 overflow-hidden">
+                      <span className="font-semibold text-sm truncate text-slate-800">{user.name}</span>
+                      <span className={`text-[10px] font-bold tracking-wider uppercase mt-1 w-fit px-1.5 py-0.5 rounded-md ${user.role === 'ADMIN' ? 'bg-rose-100 text-rose-700' : 'bg-slate-100 text-slate-600'}`}>
+                        {user.role}
+                      </span>
+                    </div>
+                  </div>
+                )
+              })
+            )}
           </div>
-        </ScrollArea>
+        </div>
       </div>
 
-      {/* Right Side: Timeline */}
+      {/* CỘT PHẢI: Bảng Timeline (Giữ nguyên cấu trúc của bạn) */}
       <div className="flex-1 bg-white rounded-3xl shadow-2xl border border-slate-200/60 flex flex-col overflow-hidden backdrop-blur-sm">
 
         {/* Header */}
@@ -141,14 +166,16 @@ export function AdminScheduleBoard() {
           <div>
             <h2 className="text-xl font-bold text-slate-800 flex items-center gap-2">
               <Calendar className="w-5 h-5 text-blue-600" />
-              Lịch trình: <span className="text-blue-600">{selectedUser?.name || "..."}</span>
+              Lịch trình: <span className="text-blue-600">{selectedUser?.name || "Đang tải..."}</span>
             </h2>
             <p className="text-sm text-slate-500 mt-1">Timeline từ 06:00 đến 24:00</p>
           </div>
           <div className="flex items-center gap-4">
-            <Button className="bg-blue-600 hover:bg-blue-700 text-white rounded-xl shadow-lg">
-              <Plus className="w-4 h-4 mr-2" />
-              Thêm lịch
+            <Button
+              className="bg-blue-600 hover:bg-blue-700 text-white rounded-xl shadow-lg"
+              onClick={() => setIsAddModalOpen(true)} // 👈 Gắn sự kiện mở
+            >
+              <Plus className="w-4 h-4 mr-2" /> Thêm lịch
             </Button>
             <div className="flex items-center bg-slate-100/80 rounded-xl p-1 border shadow-sm">
               <Button variant="ghost" size="icon" className="h-8 w-8 rounded-lg hover:bg-white" onClick={handlePrevWeek}><ChevronLeft className="w-4 h-4" /></Button>
@@ -244,6 +271,12 @@ export function AdminScheduleBoard() {
           </div>
         </div>
       </div>
+      <AddScheduleModal
+        open={isAddModalOpen}
+        onClose={() => setIsAddModalOpen(false)}
+        users={users} // Truyền danh sách user để đổ vào Select
+        defaultUserId={selectedUser?.id} // Tự động chọn người đang xem lịch
+      />
 
     </div>
   )
