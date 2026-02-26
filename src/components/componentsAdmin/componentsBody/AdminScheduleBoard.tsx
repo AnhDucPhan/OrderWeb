@@ -3,124 +3,158 @@
 import React, { useState, useMemo, useEffect } from "react"
 import { addDays, startOfWeek, format } from "date-fns"
 import { vi } from "date-fns/locale"
-import { ChevronLeft, ChevronRight, CheckCircle2, Clock, XCircle, Search, Plus, Calendar, User as UserIcon, Edit, Trash2 } from "lucide-react"
+import { ChevronLeft, ChevronRight, Search, Plus, Calendar, User as UserIcon, SunMedium, MoonStar, Users, Clock, CheckCircle2, XCircle, Edit, Trash2 } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Input } from "@/components/ui/input"
-import { ScrollArea } from "../uiAdmin/scroll-area" // Chú ý kiểm tra lại đường dẫn này trong máy bạn
 import { Badge } from "@/components/ui/badge"
-import { Skeleton } from "@/components/ui/skeleton" // 👇 Thêm hiệu ứng loading
+import { Skeleton } from "@/components/ui/skeleton"
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 
-// 👇 1. Import hook lấy user thật từ Redux
 import { useGetUsersQuery, User } from "@/services/userApi"
 import { AddScheduleModal } from "../uiAdmin/AddScheduleModal"
+import { useGetSchedulesQuery, Schedule, useDeleteScheduleMutation } from "@/services/scheduleApi"
+import { ShiftDetailsModal } from "../uiAdmin/ShiftDetailsModal"
 
-// --- DỮ LIỆU MẪU LỊCH TRÌNH (Tạm thời giữ nguyên để test layout) ---
-const MOCK_SCHEDULES = [
-  { id: 101, userId: 1, startTime: new Date("2026-02-16T08:00:00"), endTime: new Date("2026-02-16T12:00:00"), status: "APPROVED" },
-  { id: 102, userId: 1, startTime: new Date("2026-02-18T13:30:00"), endTime: new Date("2026-02-18T17:45:00"), status: "PENDING" },
-  { id: 103, userId: 2, startTime: new Date("2026-02-16T06:00:00"), endTime: new Date("2026-02-16T14:30:00"), status: "APPROVED" },
-  { id: 104, userId: 1, startTime: new Date("2026-02-20T18:00:00"), endTime: new Date("2026-02-20T23:30:00"), status: "REJECTED" },
-]
+// Định nghĩa 2 ca cố định
+const SHIFTS = [
+  { id: 'morning', name: 'Ca Sáng', time: '06:30 - 14:30', icon: SunMedium, color: 'from-amber-100 to-orange-100 border-amber-200 text-amber-800' },
+  { id: 'evening', name: 'Ca Tối', time: '14:30 - 22:30', icon: MoonStar, color: 'from-indigo-100 to-blue-100 border-indigo-200 text-indigo-800' }
+];
 
-const START_HOUR = 6;
-const END_HOUR = 24;
-const HOUR_HEIGHT = 60;
-const HOURS_ARRAY = Array.from({ length: END_HOUR - START_HOUR + 1 }, (_, i) => i + START_HOUR);
 
 export function AdminScheduleBoard() {
-  // 👇 2. Gọi API lấy user thật
-  const { data: users = [], isLoading } = useGetUsersQuery();
+  const { data: users = [], isLoading: isUsersLoading } = useGetUsersQuery();
 
-  const [currentDate, setCurrentDate] = useState(new Date("2026-02-16T00:00:00"))
+  const [currentDate, setCurrentDate] = useState(new Date())
   const [searchQuery, setSearchQuery] = useState("")
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
-
-  // 👇 3. Đổi state thành User | null (Vì lúc đầu chưa có data)
   const [selectedUser, setSelectedUser] = useState<User | null>(null)
 
-  // 👇 4. Tự động chọn user đầu tiên khi dữ liệu API tải xong
-  useEffect(() => {
-    if (users.length > 0 && !selectedUser) {
-      setSelectedUser(users[0]);
-    }
-  }, [users, selectedUser]);
+  // State để quản lý Modal xem chi tiết ca làm
+  const [viewingShift, setViewingShift] = useState<{ date: Date, shiftName: string, schedules: any[] } | null>(null);
 
+  const [isMounted, setIsMounted] = useState(false);
+  useEffect(() => { setIsMounted(true) }, []);
+
+  // --- TÍNH TOÁN NGÀY THÁNG ---
   const startDate = startOfWeek(currentDate, { weekStartsOn: 1 })
+  const endDate = addDays(startDate, 6)
   const weekDays = Array.from({ length: 7 }).map((_, i) => addDays(startDate, i))
+
+  const formattedStart = format(startDate, 'yyyy-MM-dd')
+  const formattedEnd = format(endDate, 'yyyy-MM-dd')
+
+  const { data: rawSchedules = [], isLoading: isSchedulesLoading } = useGetSchedulesQuery({
+    startDate: formattedStart,
+    endDate: formattedEnd
+  });
+
+  const realSchedules = useMemo(() => {
+    return rawSchedules.map(schedule => ({
+      ...schedule,
+      startTime: new Date(schedule.startTime),
+      endTime: new Date(schedule.endTime),
+      // Map thêm thông tin user vào schedule để tiện hiển thị
+      user: users.find(u => Number(u.id) === schedule.userId)
+    }));
+  }, [rawSchedules, users]);
+
+  useEffect(() => {
+    if (users.length > 0 && !selectedUser) setSelectedUser(users[0]);
+  }, [users, selectedUser]);
 
   const handlePrevWeek = () => setCurrentDate(addDays(currentDate, -7))
   const handleNextWeek = () => setCurrentDate(addDays(currentDate, 7))
 
-  // 👇 5. Tìm kiếm trên mảng users thật
   const filteredUsers = useMemo(() => {
     if (!searchQuery.trim()) return users;
-    return users.filter(user =>
-      user.name.toLowerCase().includes(searchQuery.toLowerCase())
-    );
+    return users.filter(user => user.name.toLowerCase().includes(searchQuery.toLowerCase()));
   }, [searchQuery, users]);
 
-  const getSchedulesForSelectedUser = (day: Date) => {
-    if (!selectedUser) return [];
-    // Tạm thời vẫn lọc theo ID của Mock Schedule (cần đổi kiểu ID nếu ID của User là chuỗi)
-    return MOCK_SCHEDULES.filter(
-      (s) => s.userId === Number(selectedUser.id) && s.startTime.toDateString() === day.toDateString()
-    )
-  }
+  // Lấy toàn bộ lịch làm việc trong 1 ngày cụ thể
+  const getSchedulesForDay = (day: Date) => {
+    return realSchedules.filter(s => s.startTime.toDateString() === day.toDateString());
+  };
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case "APPROVED": return "bg-gradient-to-r from-emerald-400 to-emerald-600 text-white border-emerald-500 shadow-emerald-200"
-      case "PENDING": return "bg-gradient-to-r from-orange-400 to-orange-600 text-white border-orange-500 shadow-orange-200"
-      case "REJECTED": return "bg-gradient-to-r from-rose-400 to-rose-600 text-white border-rose-500 shadow-rose-200 opacity-75"
-      default: return "bg-gradient-to-r from-slate-400 to-slate-600 text-white border-slate-500 shadow-slate-200"
+  // Kéo hook xóa ra
+  const [deleteSchedule] = useDeleteScheduleMutation();
+
+  // State lưu trữ ca làm đang được chọn để Sửa
+  const [editingSchedule, setEditingSchedule] = useState<any | null>(null);
+
+  // --- HÀM XỬ LÝ XÓA ---
+  const handleDeleteSchedule = async (scheduleId: number) => {
+    if (window.confirm("Bạn có chắc chắn muốn xóa ca làm này không? Hành động này không thể hoàn tác!")) {
+      try {
+        await deleteSchedule(scheduleId).unwrap();
+        // Có thể thêm thư viện Toast (sonner/react-hot-toast) để hiện thông báo Xóa Thành Công ở đây
+      } catch (error) {
+        console.error("Lỗi xóa lịch:", error);
+        alert("Có lỗi xảy ra khi xóa!");
+      }
     }
-  }
+  };
 
-  const calculateBlockStyle = (startTime: Date, endTime: Date) => {
-    const startHour = startTime.getHours() + startTime.getMinutes() / 60;
-    const endHour = endTime.getHours() + endTime.getMinutes() / 60;
-    const clampedStart = Math.max(START_HOUR, Math.min(END_HOUR, startHour));
-    const clampedEnd = Math.max(START_HOUR, Math.min(END_HOUR, endHour));
-    const top = (clampedStart - START_HOUR) * HOUR_HEIGHT;
-    const height = (clampedEnd - clampedStart) * HOUR_HEIGHT;
+  // --- HÀM XỬ LÝ MỞ MODAL SỬA ---
+  const handleEditSchedule = (schedule: any) => {
+    setEditingSchedule(schedule); // Lưu data của ca làm vào state
+    setIsAddModalOpen(true);      // Mở lại cái Modal "Thêm Lịch" (Sẽ tái sử dụng nó làm Modal Sửa)
+  };
 
-    return { top: `${top}px`, height: `${height}px` };
-  }
+  // Tìm Manager/Senior của một mảng lịch làm việc
+  const getShiftManager = (shiftSchedules: any[]) => {
+    return shiftSchedules.find(s =>
+      s.user?.role === 'ADMIN' ||
+      s.user?.position?.toLowerCase().includes('manager') ||
+      s.user?.position?.toLowerCase().includes('senior')
+    )?.user;
+  };
+  
+  useEffect(() => {
+    if (viewingShift && realSchedules.length > 0) {
+      const viewingDateString = viewingShift.date.toDateString();
+      
+      // Lọc lại mảng data mới nhất từ Redux để tìm các ca làm thuộc về "Ngày đang mở trên Modal"
+      const freshSchedulesForDay = realSchedules
+        .map(s => ({ ...s, startTime: new Date(s.startTime), endTime: new Date(s.endTime) }))
+        .filter(s => s.startTime.toDateString() === viewingDateString);
+
+      // Bơm vào state -> Modal tự động giật thẻ đến khung giờ mới / biến mất nếu bị xóa
+      setViewingShift(prev => prev ? {
+        ...prev,
+        schedules: freshSchedulesForDay
+      } : null);
+    }
+  }, [realSchedules]);
+
+  if (!isMounted) return null;
 
   return (
-    <div className="flex gap-6 h-[calc(100vh-40px)] bg-gradient-to-br from-slate-100 to-slate-200 p-6 overflow-hidden">
+    <div className="flex gap-6 h-[calc(100vh-40px)] bg-slate-50 p-6 overflow-hidden">
 
-      {/* CỘT TRÁI: Danh sách User */}
-      <div className="w-[280px] flex-shrink-0 bg-white rounded-3xl shadow-2xl border border-slate-200/60 flex flex-col overflow-hidden backdrop-blur-sm">
-        <div className="p-6 border-b bg-gradient-to-r from-slate-50 to-slate-100">
+      {/* CỘT TRÁI: Danh sách User (GIỮ NGUYÊN NHƯ CŨ) */}
+      <div className="w-[280px] flex-shrink-0 bg-white rounded-3xl shadow-xl border border-slate-200 flex flex-col overflow-hidden">
+        {/* ... (Đoạn mã cột trái của bạn giữ nguyên 100%) ... */}
+        <div className="p-6 border-b bg-slate-50/50">
           <h2 className="font-bold text-lg text-slate-800 flex items-center gap-2 mb-4">
             <UserIcon className="w-5 h-5 text-blue-600" />
             Nhân sự ({filteredUsers.length})
           </h2>
           <div className="relative">
             <Search className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
-            <Input
-              placeholder="Tìm tên..."
-              className="pl-9 bg-white border-slate-200 rounded-xl shadow-sm focus:ring-2 focus:ring-blue-500/20"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-            />
+            <Input placeholder="Tìm tên..." className="pl-9 bg-white" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} />
           </div>
         </div>
 
         <div className="flex-1 p-4 overflow-y-auto">
           <div className="flex flex-col gap-2">
-            {/* 👇 6. Hiển thị Skeleton nếu đang tải dữ liệu */}
-            {isLoading ? (
+            {isUsersLoading ? (
               Array.from({ length: 5 }).map((_, i) => (
                 <div key={i} className="flex items-center gap-2 p-2">
                   <Skeleton className="h-10 w-10 rounded-full" />
-                  <div className="space-y-2 flex-1">
-                    <Skeleton className="h-4 w-3/4" />
-                    <Skeleton className="h-3 w-1/2" />
-                  </div>
+                  <div className="space-y-2 flex-1"><Skeleton className="h-4 w-3/4" /><Skeleton className="h-3 w-1/2" /></div>
                 </div>
               ))
             ) : filteredUsers.length === 0 ? (
@@ -129,26 +163,11 @@ export function AdminScheduleBoard() {
               filteredUsers.map((user) => {
                 const isActive = selectedUser?.id === user.id;
                 return (
-                  <div
-                    key={user.id} onClick={() => setSelectedUser(user)}
-                    className={`flex items-center gap-2 py-2 px-3 rounded-2xl cursor-pointer transition-colors duration-150 ${isActive ? 'bg-blue-50 ring-1 ring-blue-200' : 'bg-white hover:bg-slate-50'}`}
-                  >
-                    {/* Avatar (smaller for compact list) */}
-                    <Avatar className="h-10 w-10 border-2 border-slate-200">
-                      {user.avatar ? (
-                        <AvatarImage src={user.avatar} className="object-cover" />
-                      ) : (
-                        <AvatarImage src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${user.name}`} />
-                      )}
-                      <AvatarFallback className="bg-slate-100 text-slate-600 font-medium">
-                        {user.name?.charAt(0).toUpperCase()}
-                      </AvatarFallback>
-                    </Avatar>
+                  <div key={user.id} onClick={() => setSelectedUser(user)} className={`flex items-center gap-3 py-2 px-3 rounded-xl cursor-pointer transition-colors ${isActive ? 'bg-blue-50 ring-1 ring-blue-200' : 'bg-white hover:bg-slate-50'}`}>
+                    <Avatar className="h-10 w-10"><AvatarImage src={user.avatar} className="object-cover" /><AvatarFallback>{user.name?.charAt(0).toUpperCase()}</AvatarFallback></Avatar>
                     <div className="flex flex-col flex-1 overflow-hidden">
                       <span className="font-semibold text-sm truncate text-slate-800">{user.name}</span>
-                      <span className={`text-[10px] font-bold tracking-wider uppercase mt-1 w-fit px-1.5 py-0.5 rounded-md ${user.role === 'ADMIN' ? 'bg-rose-100 text-rose-700' : 'bg-slate-100 text-slate-600'}`}>
-                        {user.role}
-                      </span>
+                      <span className={`text-[10px] font-bold uppercase mt-0.5 w-fit px-1.5 py-0.5 rounded-md ${user.role === 'ADMIN' ? 'bg-rose-100 text-rose-700' : 'bg-slate-100 text-slate-600'}`}>{user.role}</span>
                     </div>
                   </div>
                 )
@@ -158,124 +177,128 @@ export function AdminScheduleBoard() {
         </div>
       </div>
 
-      {/* CỘT PHẢI: Bảng Timeline (Giữ nguyên cấu trúc của bạn) */}
-      <div className="flex-1 bg-white rounded-3xl shadow-2xl border border-slate-200/60 flex flex-col overflow-hidden backdrop-blur-sm">
+      {/* CỘT PHẢI: Bảng Grid Shift-based (THIẾT KẾ MỚI) */}
+      <div className="flex-1 bg-white rounded-3xl shadow-xl border border-slate-200 flex flex-col overflow-hidden">
 
         {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b bg-gradient-to-r from-white to-slate-50 z-20">
+        <div className="flex items-center justify-between p-6 border-b z-20">
           <div>
             <h2 className="text-xl font-bold text-slate-800 flex items-center gap-2">
               <Calendar className="w-5 h-5 text-blue-600" />
-              Lịch trình: <span className="text-blue-600">{selectedUser?.name || "Đang tải..."}</span>
+              Tổng quan ca làm việc
             </h2>
-            <p className="text-sm text-slate-500 mt-1">Timeline từ 06:00 đến 24:00</p>
+            <p className="text-sm text-slate-500 mt-1">Cửa hàng: Cơ sở 1</p>
           </div>
           <div className="flex items-center gap-4">
-            <Button
-              className="bg-blue-600 hover:bg-blue-700 text-white rounded-xl shadow-lg"
-              onClick={() => setIsAddModalOpen(true)} // 👈 Gắn sự kiện mở
-            >
+            <Button className="bg-blue-600 hover:bg-blue-700 text-white rounded-xl shadow-md" onClick={() => {
+              setEditingSchedule(null);
+              setIsAddModalOpen(true)
+            }}>
               <Plus className="w-4 h-4 mr-2" /> Thêm lịch
             </Button>
-            <div className="flex items-center bg-slate-100/80 rounded-xl p-1 border shadow-sm">
-              <Button variant="ghost" size="icon" className="h-8 w-8 rounded-lg hover:bg-white" onClick={handlePrevWeek}><ChevronLeft className="w-4 h-4" /></Button>
-              <span className="text-sm font-bold px-4 w-[220px] text-center text-slate-700">
-                {format(startDate, "dd/MM/yyyy")} - {format(addDays(startDate, 6), "dd/MM/yyyy")}
-              </span>
-              <Button variant="ghost" size="icon" className="h-8 w-8 rounded-lg hover:bg-white" onClick={handleNextWeek}><ChevronRight className="w-4 h-4" /></Button>
+            <div className="flex items-center bg-slate-50 rounded-xl p-1 border">
+              <Button variant="ghost" size="icon" className="h-8 w-8 hover:bg-white rounded-lg" onClick={handlePrevWeek}><ChevronLeft className="w-4 h-4" /></Button>
+              <span className="text-sm font-bold px-4 w-[220px] text-center text-slate-700">{format(startDate, "dd/MM/yyyy")} - {format(endDate, "dd/MM/yyyy")}</span>
+              <Button variant="ghost" size="icon" className="h-8 w-8 hover:bg-white rounded-lg" onClick={handleNextWeek}><ChevronRight className="w-4 h-4" /></Button>
             </div>
           </div>
         </div>
 
-        {/* Timeline Area */}
-        <div className="flex-1 bg-gradient-to-b from-slate-50/30 to-slate-100/30 relative overflow-y-auto">
+        {/* Lưới Lịch Làm Việc Mới */}
+        <div className="flex-1 overflow-auto bg-slate-50/50 p-6">
+          <div className="grid grid-cols-7 gap-4 min-w-[900px] h-full">
 
-          {/* Day Header */}
-          <div className="sticky top-0 z-30 grid grid-cols-[60px_repeat(7,1fr)] bg-white/90 backdrop-blur-sm border-b shadow-lg">
-            <div className="border-r border-slate-200 bg-slate-50"></div>
-            {weekDays.map((day) => {
+            {weekDays.map((day, index) => {
               const isToday = day.toDateString() === new Date().toDateString();
+
+              // 1. Lấy tất cả lịch của ngày hôm đó
+              const daySchedules = getSchedulesForDay(day);
+
+              // 2. Tách tạm ra 2 mảng Sáng/Tối để đếm người và tìm Manager hiển thị ở ngoài Grid
+              const morningSchedules = daySchedules.filter(s => s.startTime.getHours() >= 5 && s.startTime.getHours() < 14);
+              const eveningSchedules = daySchedules.filter(s => s.startTime.getHours() >= 14 && s.startTime.getHours() < 24);
+
+              const morningManager = getShiftManager(morningSchedules);
+              const eveningManager = getShiftManager(eveningSchedules);
+
               return (
-                <div key={day.toString()} className={`p-4 text-center border-r border-slate-200 last:border-r-0 ${isToday ? 'bg-gradient-to-b from-blue-50 to-blue-100' : ''}`}>
-                  <div className={`text-xs font-bold uppercase tracking-wider ${isToday ? 'text-blue-700' : 'text-slate-500'}`}>
-                    {format(day, "EEEE", { locale: vi })}
+                <div key={index} className={`flex flex-col gap-4 ${isToday ? 'ring-2 ring-blue-300 rounded-2xl bg-blue-50/50 p-1.5 -m-1.5' : ''}`}>
+
+                  {/* Tiêu đề Ngày */}
+                  <div className="text-center pb-2 border-b-2 border-slate-200/60">
+                    <div className={`text-xs font-bold uppercase tracking-wider ${isToday ? 'text-blue-600' : 'text-slate-500'}`}>
+                      {format(day, "EEEE", { locale: vi })}
+                    </div>
+                    <div className={`text-2xl font-black mt-1 ${isToday ? 'text-blue-600' : 'text-slate-800'}`}>
+                      {format(day, "dd")}
+                    </div>
                   </div>
-                  <div className={`text-lg font-black mt-1 ${isToday ? 'text-blue-700' : 'text-slate-800'}`}>
-                    {format(day, "dd")}
+
+                  {/* KHỐI CARD DUY NHẤT GỘP 2 CA (Click để xem cả ngày) */}
+                  <div
+                    onClick={() => setViewingShift({ date: day, shiftName: "Toàn bộ lịch làm việc", schedules: daySchedules })}
+                    className="flex-1 rounded-2xl border border-slate-200 bg-white shadow-sm hover:shadow-xl cursor-pointer transition-all duration-300 hover:-translate-y-1 flex flex-col overflow-hidden group"
+                  >
+
+                    {/* NỬA TRÊN: CA SÁNG */}
+                    <div className="flex-1 p-3 bg-gradient-to-br from-amber-50 to-orange-50/50 border-b border-slate-100 flex flex-col group-hover:from-amber-100/80 transition-colors">
+                      <div className="flex items-center justify-between mb-2 opacity-80 text-amber-900">
+                        <span className="font-bold text-xs">Ca Sáng</span>
+                        <SunMedium className="w-4 h-4" />
+                      </div>
+
+                      <div className="mt-auto bg-white/70 rounded-xl p-2 backdrop-blur-sm border border-white">
+                        <div className="text-[9px] uppercase font-bold text-amber-700/60 mb-0.5">Quản lý ca</div>
+                        {morningManager ? (
+                          <div className="font-bold text-xs truncate text-amber-950" title={morningManager.name}>{morningManager.name}</div>
+                        ) : (
+                          <div className="text-[11px] text-rose-500 font-bold italic">Chưa phân bổ</div>
+                        )}
+                      </div>
+                      <div className="mt-2 flex items-center gap-1.5 text-[11px] font-bold text-amber-800 opacity-80">
+                        <Users className="w-3.5 h-3.5" /> {morningSchedules.length} nhân sự
+                      </div>
+                    </div>
+
+                    {/* NỬA DƯỚI: CA TỐI */}
+                    <div className="flex-1 p-3 bg-gradient-to-br from-indigo-50 to-blue-50/50 flex flex-col group-hover:from-indigo-100/80 transition-colors">
+                      <div className="flex items-center justify-between mb-2 opacity-80 text-indigo-900">
+                        <span className="font-bold text-xs">Ca Tối</span>
+                        <MoonStar className="w-4 h-4" />
+                      </div>
+
+                      <div className="mt-auto bg-white/70 rounded-xl p-2 backdrop-blur-sm border border-white">
+                        <div className="text-[9px] uppercase font-bold text-indigo-700/60 mb-0.5">Quản lý ca</div>
+                        {eveningManager ? (
+                          <div className="font-bold text-xs truncate text-indigo-950" title={eveningManager.name}>{eveningManager.name}</div>
+                        ) : (
+                          <div className="text-[11px] text-rose-500 font-bold italic">Chưa phân bổ</div>
+                        )}
+                      </div>
+                      <div className="mt-2 flex items-center gap-1.5 text-[11px] font-bold text-indigo-800 opacity-80">
+                        <Users className="w-3.5 h-3.5" /> {eveningSchedules.length} nhân sự
+                      </div>
+                    </div>
+
                   </div>
                 </div>
               )
             })}
           </div>
-
-          {/* Time Grid */}
-          <div className="relative min-w-[700px]">
-
-            {/* Hour Lines */}
-            {HOURS_ARRAY.map((hour) => (
-              <div key={hour} className="grid grid-cols-[60px_1fr] border-b border-slate-200/50" style={{ height: `${HOUR_HEIGHT}px` }}>
-                <div className="text-right pr-3 pt-2 text-xs text-slate-500 font-medium bg-slate-50/50 border-r border-slate-200 flex items-start justify-end">
-                  <span className="bg-white px-2 py-1 rounded shadow-sm border">
-                    {hour === 24 ? "24:00" : `${hour.toString().padStart(2, '0')}:00`}
-                  </span>
-                </div>
-                <div className="grid grid-cols-7 relative">
-                  {Array.from({ length: 7 }).map((_, i) => (
-                    <div key={i} className="border-r border-slate-200/30 last:border-r-0 h-full w-full hover:bg-slate-100/20 transition-colors"></div>
-                  ))}
-                </div>
-              </div>
-            ))}
-
-            {/* Schedule Blocks */}
-            <div className="absolute top-0 left-[60px] right-0 bottom-0 grid grid-cols-7 pointer-events-none">
-              {weekDays.map((day, index) => {
-                const daySchedules = getSchedulesForSelectedUser(day);
-
-                return (
-                  <div key={index} className="relative h-full border-r border-transparent last:border-r-0 pointer-events-auto">
-                    {daySchedules.map((schedule) => {
-                      const style = calculateBlockStyle(schedule.startTime, schedule.endTime);
-
-                      return (
-                        <div
-                          key={schedule.id}
-                          className={`absolute left-2 right-2 p-3 rounded-xl border-2 shadow-lg cursor-pointer transition-all duration-200 hover:scale-105 hover:z-20 overflow-hidden flex flex-col group ${getStatusColor(schedule.status)}`}
-                          style={style}
-                        >
-                          <div className="font-bold text-sm truncate flex items-center justify-between">
-                            {format(schedule.startTime, "HH:mm")} - {format(schedule.endTime, "HH:mm")}
-                            <div className="opacity-0 group-hover:opacity-100 transition-opacity flex gap-1">
-                              <Button size="sm" variant="ghost" className="h-6 w-6 p-0 bg-white/20 hover:bg-white/40">
-                                <Edit className="w-3 h-3" />
-                              </Button>
-                              <Button size="sm" variant="ghost" className="h-6 w-6 p-0 bg-white/20 hover:bg-white/40">
-                                <Trash2 className="w-3 h-3" />
-                              </Button>
-                            </div>
-                          </div>
-                          <div className="text-xs font-semibold mt-2 opacity-90 uppercase tracking-wide flex items-center gap-1">
-                            {schedule.status === "PENDING" && <Clock className="w-3 h-3" />}
-                            {schedule.status === "APPROVED" && <CheckCircle2 className="w-3 h-3" />}
-                            {schedule.status === "REJECTED" && <XCircle className="w-3 h-3" />}
-                            {schedule.status}
-                          </div>
-                        </div>
-                      )
-                    })}
-                  </div>
-                )
-              })}
-            </div>
-
-          </div>
         </div>
       </div>
-      <AddScheduleModal
-        open={isAddModalOpen}
-        onClose={() => setIsAddModalOpen(false)}
-        users={users} // Truyền danh sách user để đổ vào Select
-        defaultUserId={selectedUser?.id} // Tự động chọn người đang xem lịch
+
+      <AddScheduleModal open={isAddModalOpen} onClose={() => setIsAddModalOpen(false)} users={users} defaultUserId={selectedUser?.id} editData={editingSchedule} />
+
+      <ShiftDetailsModal
+        isOpen={!!viewingShift}
+        onClose={() => {
+          setViewingShift(null);
+          setEditingSchedule(null);
+        }}
+        shiftData={viewingShift}
+        onEdit={handleEditSchedule}
+        onDelete={handleDeleteSchedule}
       />
 
     </div>

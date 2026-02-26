@@ -23,10 +23,11 @@ export const userApi = createApi({
     prepareHeaders:  async (headers) => {
       // Nếu có token thì nhét vào đây tự động
       const session: any = await getSession();
-      const token = session?.accessToken;
+      const token = session?.accessToken; 
+      console.log("TEST SESSION:", session);
       if (token) {
-        // 2. Cắt bỏ dấu ngoặc kép thừa (nếu có)
-        headers.set('authorization', `Bearer ${token}`);
+        headers.set('Authorization', `Bearer ${token}`); 
+      
       }
       return headers
     },
