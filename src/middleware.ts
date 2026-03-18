@@ -3,24 +3,27 @@ import { auth } from "@/auth"; // Import hàm auth từ file cấu hình của b
 
 export default auth((req) => {
     const isLoggedIn = !!req.auth;
-    const role = req.auth?.user?.role; // Lấy role từ session (đã config ở bước trước)
+    const role = req.auth?.user?.role || ''; // Lấy role từ session
     const { nextUrl } = req;
 
     const isAdminRoute = nextUrl.pathname.startsWith('/admin');
     const isRootRoute = nextUrl.pathname === '/';
     const isAuthRoute = nextUrl.pathname.startsWith('/login') || nextUrl.pathname.startsWith('/register');
 
-   
-    if (isRootRoute && isLoggedIn && role === 'ADMIN') {
+    const allowedAdminRoles = ['MANAGER', 'STAFF'];
+
+    // 1. NẾU ĐANG Ở TRANG CHỦ MÀ ĐÃ LOGIN VÀ CÓ QUYỀN -> Đá vào /admin
+    if (isRootRoute && isLoggedIn && allowedAdminRoles.includes(role)) {
         return NextResponse.redirect(new URL('/admin', nextUrl));
     }
 
-    
+    // 2. BẢO VỆ ROUTE /ADMIN
     if (isAdminRoute) {
         if (!isLoggedIn) {
             return NextResponse.redirect(new URL('/', nextUrl));
         }
-        if (role !== 'ADMIN') {
+        // 👇 Nếu role KHÔNG nằm trong danh sách cho phép -> Đá về trang chủ
+        if (!allowedAdminRoles.includes(role)) {
             return NextResponse.redirect(new URL('/', nextUrl));
         }
     }
@@ -28,7 +31,7 @@ export default auth((req) => {
     // 3. (Tuỳ chọn) NẾU ĐÃ LOGIN MÀ CỐ VÀO TRANG LOGIN
     // -> Đá về trang tương ứng với role
     if (isAuthRoute && isLoggedIn) {
-        if (role === 'ADMIN') {
+        if (allowedAdminRoles.includes(role)) {
             return NextResponse.redirect(new URL('/admin', nextUrl));
         }
         return NextResponse.redirect(new URL('/', nextUrl));

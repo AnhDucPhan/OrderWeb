@@ -10,6 +10,7 @@ declare module "next-auth" {
     user: {
       id: string
       role?: string
+      position?: string
       // Các field khác (role, address...) nếu cần
     } & DefaultSession["user"]
   }

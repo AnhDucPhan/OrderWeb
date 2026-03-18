@@ -2,7 +2,6 @@
 import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react'
 import { getSession } from 'next-auth/react';
 
-// Định nghĩa kiểu User (như cũ)
 export interface User {
   id: string;
   name: string;
@@ -12,16 +11,15 @@ export interface User {
   avatar?: string;
   createdAt: string;
   status: string;
+  position: string; 
 }
 
 export const userApi = createApi({
-  reducerPath: 'userApi', // Tên định danh trong Store
+  reducerPath: 'userApi',
 
-  // 1. Cấu hình Base URL và Headers
   baseQuery: fetchBaseQuery({
     baseUrl: 'http://localhost:8386',
     prepareHeaders:  async (headers) => {
-      // Nếu có token thì nhét vào đây tự động
       const session: any = await getSession();
       const token = session?.accessToken; 
       console.log("TEST SESSION:", session);
@@ -33,7 +31,6 @@ export const userApi = createApi({
     },
   }),
 
-  // 2. QUAN TRỌNG: Định nghĩa các Nhãn (Tag) để quản lý Cache
   tagTypes: ['Users'],
 
   endpoints: (builder) => ({

@@ -3,6 +3,7 @@ import uiReducer from './features/ui/uiSlice';
 import cartReducer from './features/cartSlice';
 import { userApi } from '@/services/userApi';
 import { scheduleApi } from '@/services/scheduleApi';
+import { notificationApi } from '@/services/notificationApi';
 
 
 // Tạo store
@@ -13,11 +14,13 @@ export const makeStore = () => {
       cart: cartReducer,
       [userApi.reducerPath]: userApi.reducer,
       [scheduleApi.reducerPath]: scheduleApi.reducer,
+      [notificationApi.reducerPath]: notificationApi.reducer,
     },
     middleware: (getDefaultMiddleware) =>
       getDefaultMiddleware()
         .concat(userApi.middleware)
-        .concat(scheduleApi.middleware),
+        .concat(scheduleApi.middleware)
+        .concat(notificationApi.middleware),
   });
 };
 

@@ -6,6 +6,7 @@ import { SidebarTrigger } from '@/components/ui/sidebar'; // Nút đóng mở si
 import { Button, Avatar, Dropdown, MenuProps } from 'antd'; // Tận dụng Antd của bạn
 import { UserOutlined, LogoutOutlined } from '@ant-design/icons';
 import { signOut, useSession } from 'next-auth/react';
+import NotificationBell from './NotificationBell';
 
 const AdminHeader = () => {
     const { data: session } = useSession();
@@ -41,6 +42,7 @@ const AdminHeader = () => {
                 <div className="h-6 w-[1px] bg-gray-200 mx-2 hidden md:block"></div>
             </div>
 
+            <NotificationBell />
             {/* Phần bên phải Header: User Info */}
             <div className="flex items-center gap-4">
                 <Dropdown menu={{ items }} trigger={['click']}>

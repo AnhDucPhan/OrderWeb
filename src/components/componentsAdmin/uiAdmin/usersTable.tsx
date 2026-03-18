@@ -20,7 +20,7 @@ import {
   DropdownMenuLabel,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { MoreHorizontal, Shield, User as UserIcon, Pencil, Trash2, KeyRound, Ban, CheckCircle } from "lucide-react"
+import { MoreHorizontal, Shield, User as UserIcon, Pencil, Trash2, Briefcase, Ban, CheckCircle } from "lucide-react"
 import { Skeleton } from "@/components/ui/skeleton"
 import { useGetUsersQuery, User } from "@/services/userApi" // 👇 1. Import type User
 import { useDeleteUserMutation } from "@/services/userApi"
@@ -109,7 +109,7 @@ export function UserTable() {
                 <Checkbox />
               </TableHead>
               <TableHead>User Name</TableHead>
-              <TableHead>Role</TableHead>
+              <TableHead>Chức Vụ</TableHead>
               <TableHead>Date Added</TableHead>
               <TableHead>Status</TableHead>
               <TableHead className="text-right">Actions</TableHead>
@@ -148,8 +148,15 @@ export function UserTable() {
                     variant="outline"
                     className="flex w-fit items-center gap-1 font-normal"
                   >
-                    {user.role === "ADMIN" ? <Shield className="h-3 w-3" /> : <UserIcon className="h-3 w-3" />}
-                    {user.role}
+                    {/* Vẫn giữ icon Khiên cho ADMIN để dễ nhận biết, còn nhân viên bình thường dùng icon Cặp táp */}
+                    {user.role === "ADMIN" ? (
+                      <Shield className="h-3 w-3 text-blue-600" />
+                    ) : (
+                      <Briefcase className="h-3 w-3 text-slate-500" />
+                    )}
+
+                    {/* Hiển thị trường position. Nếu ai chưa có chức vụ thì hiện chữ "Chưa cập nhật" để giao diện không bị trống */}
+                    {user.position || "Chưa cập nhật"}
                   </Badge>
                 </TableCell>
 

@@ -1,4 +1,4 @@
-import { AdminScheduleBoard } from "@/components/componentsAdmin/componentsBody/AdminScheduleBoard";
+import AdminScheduleBoard from "@/components/componentsAdmin/componentsBody/AdminScheduleBoard";
 
 
 const SchedulesPage = () => {

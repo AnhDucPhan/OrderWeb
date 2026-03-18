@@ -1,306 +1,485 @@
 "use client"
 
-import React, { useState, useMemo, useEffect } from "react"
-import { addDays, startOfWeek, format } from "date-fns"
+import React, { useState, useMemo } from "react"
+import { format, addDays, subDays, isSameDay, startOfDay, endOfDay, startOfWeek, endOfWeek } from "date-fns"
 import { vi } from "date-fns/locale"
-import { ChevronLeft, ChevronRight, Search, Plus, Calendar, User as UserIcon, SunMedium, MoonStar, Users, Clock, CheckCircle2, XCircle, Edit, Trash2 } from "lucide-react"
+import { Calendar as CalendarIcon, ChevronLeft, ChevronRight, Clock, Edit, Plus, Trash2, CheckCircle2, Loader2, BellRing } from "lucide-react"
+import { toast } from "sonner"
 
 import { Button } from "@/components/ui/button"
+import { Calendar } from "@/components/ui/calendar"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Input } from "@/components/ui/input"
-import { Badge } from "@/components/ui/badge"
-import { Skeleton } from "@/components/ui/skeleton"
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 
-import { useGetUsersQuery, User } from "@/services/userApi"
-import { AddScheduleModal } from "../uiAdmin/AddScheduleModal"
-import { useGetSchedulesQuery, Schedule, useDeleteScheduleMutation } from "@/services/scheduleApi"
-import { ShiftDetailsModal } from "../uiAdmin/ShiftDetailsModal"
+// Import hooks gọi API và Component Thêm/Sửa
+import { useGetUsersQuery } from "@/services/userApi"
+import { useDeleteScheduleMutation, useGetSchedulesQuery, usePublishSchedulesMutation } from "@/services/scheduleApi"
+import { AddScheduleModal } from "../uiAdmin/ScheduleModal"
+import { useSession } from "next-auth/react"
+import { useBroadcastOpenScheduleMutation } from "@/services/notificationApi"
+import BroadcastScheduleModal from "../uiAdmin/BroadcastScheduleModal"
+import ReviewScheduleModal from "../uiAdmin/ReviewScheduleModal"
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 
-// Định nghĩa 2 ca cố định
-const SHIFTS = [
-  { id: 'morning', name: 'Ca Sáng', time: '06:30 - 14:30', icon: SunMedium, color: 'from-amber-100 to-orange-100 border-amber-200 text-amber-800' },
-  { id: 'evening', name: 'Ca Tối', time: '14:30 - 22:30', icon: MoonStar, color: 'from-indigo-100 to-blue-100 border-indigo-200 text-indigo-800' }
-];
+// ==============================================
+// CẤU HÌNH TRỤC Y VÀ UI
+// ==============================================
+const START_HOUR = 6;
+const END_HOUR = 23;
+const TOTAL_HOURS = END_HOUR - START_HOUR;
+const HOURS_ARRAY = Array.from({ length: TOTAL_HOURS + 1 }, (_, i) => i + START_HOUR);
 
+const CARD_WIDTH = 160;
+const CARD_GAP = 16;
 
-export function AdminScheduleBoard() {
-  const { data: users = [], isLoading: isUsersLoading } = useGetUsersQuery();
+const getStatusColor = (status: string) => {
+  switch (status) {
+    case "APPROVED": return "bg-white border-emerald-500 shadow-sm"
+    case "PENDING": return "bg-amber-50 border-amber-300 border-dashed shadow-sm"
+    case "REJECTED": return "bg-rose-50 border-rose-300 shadow-sm opacity-70"
+    default: return "bg-white border-slate-300 shadow-sm"
+  }
+}
 
-  const [currentDate, setCurrentDate] = useState(new Date())
-  const [searchQuery, setSearchQuery] = useState("")
-  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
-  const [selectedUser, setSelectedUser] = useState<User | null>(null)
+const calculateBlockStyle = (startTime: any, endTime: any) => {
+  const start = new Date(startTime);
+  const end = new Date(endTime);
+  const startHour = start.getHours() + start.getMinutes() / 60;
+  const endHour = end.getHours() + end.getMinutes() / 60;
+  const clampedStart = Math.max(START_HOUR, Math.min(END_HOUR, startHour));
+  const clampedEnd = Math.max(START_HOUR, Math.min(END_HOUR, endHour));
+  const topPercent = ((clampedStart - START_HOUR) / TOTAL_HOURS) * 100;
+  const heightPercent = ((clampedEnd - clampedStart) / TOTAL_HOURS) * 100;
+  return { top: `${topPercent}%`, height: `${heightPercent}%` };
+}
 
-  // State để quản lý Modal xem chi tiết ca làm
-  const [viewingShift, setViewingShift] = useState<{ date: Date, shiftName: string, schedules: any[] } | null>(null);
+// ==============================================
+// THUẬT TOÁN: LÀN SÓNG (WAVE) + DỒN CỘT (COMPACT)
+// ==============================================
+const processSchedules = (schedules: any[]) => {
+  if (!schedules || schedules.length === 0) return [];
 
-  const [isMounted, setIsMounted] = useState(false);
-  useEffect(() => { setIsMounted(true) }, []);
-
-  // --- TÍNH TOÁN NGÀY THÁNG ---
-  const startDate = startOfWeek(currentDate, { weekStartsOn: 1 })
-  const endDate = addDays(startDate, 6)
-  const weekDays = Array.from({ length: 7 }).map((_, i) => addDays(startDate, i))
-
-  const formattedStart = format(startDate, 'yyyy-MM-dd')
-  const formattedEnd = format(endDate, 'yyyy-MM-dd')
-
-  const { data: rawSchedules = [], isLoading: isSchedulesLoading } = useGetSchedulesQuery({
-    startDate: formattedStart,
-    endDate: formattedEnd
+  const sorted = schedules.map(s => ({ ...s })).sort((a, b) => {
+    const timeDiff = new Date(a.startTime).getTime() - new Date(b.startTime).getTime();
+    if (timeDiff === 0) return a.id - b.id;
+    return timeDiff;
   });
 
-  const realSchedules = useMemo(() => {
-    return rawSchedules.map(schedule => ({
-      ...schedule,
-      startTime: new Date(schedule.startTime),
-      endTime: new Date(schedule.endTime),
-      // Map thêm thông tin user vào schedule để tiện hiển thị
-      user: users.find(u => Number(u.id) === schedule.userId)
-    }));
-  }, [rawSchedules, users]);
+  const columnsMaxEndTime: number[] = [];
+  let currentWaveStart = -1;
+  let waveIndex = -1;
 
-  useEffect(() => {
-    if (users.length > 0 && !selectedUser) setSelectedUser(users[0]);
-  }, [users, selectedUser]);
+  sorted.forEach((s) => {
+    const startTimestamp = new Date(s.startTime).getTime();
+    const endTimestamp = new Date(s.endTime).getTime();
 
-  const handlePrevWeek = () => setCurrentDate(addDays(currentDate, -7))
-  const handleNextWeek = () => setCurrentDate(addDays(currentDate, 7))
+    if (currentWaveStart === -1 || (startTimestamp - currentWaveStart) > 3 * 60 * 60 * 1000) {
+      currentWaveStart = startTimestamp;
+      waveIndex++;
+    }
 
-  const filteredUsers = useMemo(() => {
-    if (!searchQuery.trim()) return users;
-    return users.filter(user => user.name.toLowerCase().includes(searchQuery.toLowerCase()));
-  }, [searchQuery, users]);
+    let targetCol = waveIndex % 2 === 0 ? 0 : 1;
+    while (columnsMaxEndTime[targetCol] && startTimestamp < columnsMaxEndTime[targetCol]) {
+      targetCol += 2;
+    }
+    s.column = targetCol;
+    columnsMaxEndTime[targetCol] = endTimestamp;
+  });
 
-  // Lấy toàn bộ lịch làm việc trong 1 ngày cụ thể
-  const getSchedulesForDay = (day: Date) => {
-    return realSchedules.filter(s => s.startTime.toDateString() === day.toDateString());
-  };
+  const usedColumns = Array.from(new Set(sorted.map(s => s.column))).sort((a, b) => a - b);
+  const columnMap = new Map();
+  usedColumns.forEach((oldCol, newCol) => columnMap.set(oldCol, newCol));
 
-  // Kéo hook xóa ra
-  const [deleteSchedule] = useDeleteScheduleMutation();
+  sorted.forEach(s => {
+    s.column = columnMap.get(s.column);
+  });
 
-  // State lưu trữ ca làm đang được chọn để Sửa
+  return sorted;
+}
+
+export default function AdminScheduleBoard() {
+  // STATE CƠ BẢN
+  const [selectedDate, setSelectedDate] = useState<Date>(new Date());
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [editingSchedule, setEditingSchedule] = useState<any | null>(null);
+  const [isReviewModalOpen, setIsReviewModalOpen] = useState(false);
+  const [scheduleToReview, setScheduleToReview] = useState<any | null>(null);
+  const [isPublishModalOpen, setIsPublishModalOpen] = useState(false);
 
-  // --- HÀM XỬ LÝ XÓA ---
-  const handleDeleteSchedule = async (scheduleId: number) => {
-    if (window.confirm("Bạn có chắc chắn muốn xóa ca làm này không? Hành động này không thể hoàn tác!")) {
-      try {
-        await deleteSchedule(scheduleId).unwrap();
-        // Có thể thêm thư viện Toast (sonner/react-hot-toast) để hiện thông báo Xóa Thành Công ở đây
-      } catch (error) {
-        console.error("Lỗi xóa lịch:", error);
-        alert("Có lỗi xảy ra khi xóa!");
-      }
+  const weekStart = startOfWeek(selectedDate, { weekStartsOn: 1 });
+  const weekEnd = endOfWeek(selectedDate, { weekStartsOn: 1 });
+
+  const { data: allSchedules = [], isLoading: isSchedulesLoading } = useGetSchedulesQuery({
+    startDate: weekStart.toISOString(),
+    endDate: weekEnd.toISOString()
+  });
+  const { data: usersData } = useGetUsersQuery();
+  const [deleteSchedule] = useDeleteScheduleMutation();
+  const { data: session } = useSession();
+
+
+  const currentUser = session?.user;
+  const isManager = currentUser?.role === 'MANAGER' || currentUser?.position === 'Store Manager';
+  const users = usersData || [];
+
+  const [publishSchedules, { isLoading: isPublishing }] = usePublishSchedulesMutation();
+
+  // ==============================================
+  // XỬ LÝ DỮ LIỆU (Chỉ chạy khi có thay đổi)
+  // ==============================================
+  const { processedSchedules, pendingSchedules, unpublishedApproved, futurePending } = useMemo(() => {
+    // 1. PHÂN QUYỀN: Quản lý thấy tất cả, Nhân viên chỉ thấy lịch của mình
+    const allowedSchedules = isManager
+      ? allSchedules
+      : allSchedules.filter((s: any) => s.userId === Number(currentUser?.id));
+
+    // ==========================================
+    // KHỐI 1: DỮ LIỆU CHO TIMELINE GIỮA MÀN HÌNH
+    // ==========================================
+    // Chỉ lấy những ca làm nằm trong ngày đang được chọn (selectedDate)
+    const schedulesForSelectedDay = allowedSchedules.filter((s: any) =>
+      isSameDay(new Date(s.startTime), selectedDate)
+    );
+
+    // Tính toán thuật toán xếp cột để vẽ UI
+    const processed = processSchedules(schedulesForSelectedDay);
+
+    // Ca chờ duyệt của ĐÚNG ngày hôm đó (giữ lại để code UI cũ không bị lỗi)
+    const pending = schedulesForSelectedDay.filter((s: any) => s.status === 'PENDING');
+
+
+    // ==========================================
+    // KHỐI 2: DỮ LIỆU CHO SIDEBAR BÊN PHẢI (CÔNG BỐ)
+    // ==========================================
+    const now = new Date(); // Lấy mốc thời gian hiện tại
+
+    // A. Danh sách sẵn sàng CÔNG BỐ (Nút xanh lá): Đã duyệt + Chưa công bố + Ở tương lai
+    const readyToPublish = allowedSchedules
+      .filter((s: any) =>
+        s.status === 'APPROVED' &&
+        s.isPublished === false &&
+        new Date(s.startTime) > now
+      )
+      .sort((a: any, b: any) => new Date(a.startTime).getTime() - new Date(b.startTime).getTime());
+
+    // B. Danh sách CHỜ DUYỆT (Nhắc nhở Quản lý): Đang Pending + Ở tương lai
+    const pendingInFuture = allowedSchedules
+      .filter((s: any) =>
+        s.status === 'PENDING' &&
+        new Date(s.startTime) > now
+      )
+      .sort((a: any, b: any) => new Date(a.startTime).getTime() - new Date(b.startTime).getTime());
+
+
+    return {
+      processedSchedules: processed,
+      pendingSchedules: pending,
+      unpublishedApproved: readyToPublish, // 👈 Dùng mảng này cho nút "Duyệt & Công Bố Hết"
+      futurePending: pendingInFuture       // 👈 Dùng mảng này để hiển thị nhắc nhở Quản lý
+    };
+  }, [allSchedules, selectedDate, isManager, currentUser]);
+
+  const containerMinWidth = useMemo(() => {
+    if (processedSchedules.length === 0) return 0;
+    const maxColumnIndex = Math.max(...processedSchedules.map(s => s.column));
+    return ((maxColumnIndex + 1) * (CARD_WIDTH + CARD_GAP)) + CARD_GAP + 50;
+  }, [processedSchedules]);
+
+
+  const handlePublishAll = async () => {
+    try {
+      const idsToPublish = unpublishedApproved.map((s: any) => s.id);
+
+      // 👇 TRUYỀN THÊM NGÀY BẮT ĐẦU VÀ KẾT THÚC CỦA TUẦN VÀO ĐÂY 👇
+      await publishSchedules({
+        scheduleIds: idsToPublish,
+        startDate: weekStart.toISOString(),
+        endDate: weekEnd.toISOString()
+      }).unwrap();
+
+      toast.success(`Đã công bố chính thức ${idsToPublish.length} ca làm mới!`);
+      setIsPublishModalOpen(false);
+    } catch (err: any) {
+      toast.error(err?.data?.message || "Lỗi hệ thống khi công bố lịch");
     }
   };
 
-  // --- HÀM XỬ LÝ MỞ MODAL SỬA ---
-  const handleEditSchedule = (schedule: any) => {
-    setEditingSchedule(schedule); // Lưu data của ca làm vào state
-    setIsAddModalOpen(true);      // Mở lại cái Modal "Thêm Lịch" (Sẽ tái sử dụng nó làm Modal Sửa)
-  };
-
-  // Tìm Manager/Senior của một mảng lịch làm việc
-  const getShiftManager = (shiftSchedules: any[]) => {
-    return shiftSchedules.find(s =>
-      s.user?.role === 'ADMIN' ||
-      s.user?.position?.toLowerCase().includes('manager') ||
-      s.user?.position?.toLowerCase().includes('senior')
-    )?.user;
-  };
-  
-  useEffect(() => {
-    if (viewingShift && realSchedules.length > 0) {
-      const viewingDateString = viewingShift.date.toDateString();
-      
-      // Lọc lại mảng data mới nhất từ Redux để tìm các ca làm thuộc về "Ngày đang mở trên Modal"
-      const freshSchedulesForDay = realSchedules
-        .map(s => ({ ...s, startTime: new Date(s.startTime), endTime: new Date(s.endTime) }))
-        .filter(s => s.startTime.toDateString() === viewingDateString);
-
-      // Bơm vào state -> Modal tự động giật thẻ đến khung giờ mới / biến mất nếu bị xóa
-      setViewingShift(prev => prev ? {
-        ...prev,
-        schedules: freshSchedulesForDay
-      } : null);
+  const handleDelete = async (id: number) => {
+    if (!confirm("Bạn có chắc chắn muốn xóa ca làm việc này?")) return;
+    try {
+      await deleteSchedule(id).unwrap();
+      toast.success("Đã xóa ca làm việc!");
+    } catch (error) {
+      toast.error("Xóa thất bại!");
     }
-  }, [realSchedules]);
+  };
 
-  if (!isMounted) return null;
+  const handleEdit = (schedule: any) => {
+    setEditingSchedule(schedule);
+    setIsAddModalOpen(true);
+  };
+
+  const handleOpenReview = (schedule: any) => {
+    setScheduleToReview(schedule);
+    setIsReviewModalOpen(true);
+  };
 
   return (
-    <div className="flex gap-6 h-[calc(100vh-40px)] bg-slate-50 p-6 overflow-hidden">
+    <div className="flex flex-col xl:flex-row h-[calc(100vh-100px)] gap-6 w-full">
 
-      {/* CỘT TRÁI: Danh sách User (GIỮ NGUYÊN NHƯ CŨ) */}
-      <div className="w-[280px] flex-shrink-0 bg-white rounded-3xl shadow-xl border border-slate-200 flex flex-col overflow-hidden">
-        {/* ... (Đoạn mã cột trái của bạn giữ nguyên 100%) ... */}
-        <div className="p-6 border-b bg-slate-50/50">
-          <h2 className="font-bold text-lg text-slate-800 flex items-center gap-2 mb-4">
-            <UserIcon className="w-5 h-5 text-blue-600" />
-            Nhân sự ({filteredUsers.length})
-          </h2>
-          <div className="relative">
-            <Search className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
-            <Input placeholder="Tìm tên..." className="pl-9 bg-white" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} />
+      {/* ================= KHỐI TRUNG TÂM: TIMELINE CHÍNH ================= */}
+      <div className="flex-1 flex flex-col bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden">
+        {/* HEADER */}
+        <div className="px-6 py-5 border-b border-slate-100 flex items-center justify-between bg-white z-10">
+          <div className="flex items-center gap-4">
+            <h2 className="text-2xl font-black text-slate-800 tracking-tight">Lịch làm việc</h2>
+            <div className="flex items-center bg-slate-50 rounded-lg p-1 border border-slate-100 ml-4">
+              <Button variant="ghost" size="icon" className="h-8 w-8 rounded-md hover:bg-white hover:shadow-sm" onClick={() => setSelectedDate(subDays(selectedDate, 1))}>
+                <ChevronLeft className="w-4 h-4 text-slate-600" />
+              </Button>
+              <Button variant="ghost" className="h-8 px-4 text-sm font-bold text-slate-700 hover:bg-white hover:shadow-sm" onClick={() => setSelectedDate(new Date())}>
+                {isSameDay(selectedDate, new Date()) ? "Hôm nay" : format(selectedDate, "dd/MM/yyyy")}
+              </Button>
+              <Button variant="ghost" size="icon" className="h-8 w-8 rounded-md hover:bg-white hover:shadow-sm" onClick={() => setSelectedDate(addDays(selectedDate, 1))}>
+                <ChevronRight className="w-4 h-4 text-slate-600" />
+              </Button>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-3">
+            {isManager && <BroadcastScheduleModal />}
+            <Button
+              className="bg-blue-600 hover:bg-blue-700 text-white rounded-xl shadow-sm px-5 h-10 font-medium"
+              onClick={() => {
+                setEditingSchedule(null);
+                setIsAddModalOpen(true);
+              }}
+            >
+              <Plus className="w-4 h-4 mr-2" /> Tạo ca làm
+            </Button>
           </div>
         </div>
 
-        <div className="flex-1 p-4 overflow-y-auto">
-          <div className="flex flex-col gap-2">
-            {isUsersLoading ? (
-              Array.from({ length: 5 }).map((_, i) => (
-                <div key={i} className="flex items-center gap-2 p-2">
-                  <Skeleton className="h-10 w-10 rounded-full" />
-                  <div className="space-y-2 flex-1"><Skeleton className="h-4 w-3/4" /><Skeleton className="h-3 w-1/2" /></div>
+        {/* TIMELINE CONTENT */}
+        <div className="flex-1 overflow-auto bg-slate-50 relative custom-scrollbar">
+          <div className="flex min-h-full min-w-max">
+            {/* Cột Mốc Giờ */}
+            <div className="sticky left-0 top-0 z-30 w-[60px] bg-white border-r border-slate-100 shadow-[2px_0_10px_rgba(0,0,0,0.02)] py-4">
+              <div className="relative w-full h-[800px]">
+                {HOURS_ARRAY.map((hour) => {
+                  const topPercent = ((hour - START_HOUR) / TOTAL_HOURS) * 100;
+                  return (
+                    <div key={hour} className="absolute w-full" style={{ top: `${topPercent}%` }}>
+                      <div className="absolute right-3 -translate-y-1/2 text-[11px] font-bold text-slate-400">
+                        {`${hour.toString().padStart(2, '0')}:00`}
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+
+            {/* Vùng Vẽ Các Thẻ Lịch */}
+            <div className="relative py-4 flex-1" style={{ minWidth: `${Math.max(containerMinWidth, 800)}px` }}>
+              <div className="relative w-full h-[800px]">
+                <div className="absolute inset-0 pointer-events-none">
+                  {HOURS_ARRAY.map((hour) => {
+                    const topPercent = ((hour - START_HOUR) / TOTAL_HOURS) * 100;
+                    return <div key={hour} className="absolute left-0 right-0 border-b border-slate-200/50" style={{ top: `${topPercent}%` }} />
+                  })}
                 </div>
-              ))
-            ) : filteredUsers.length === 0 ? (
-              <div className="text-center text-slate-500 text-sm py-8">Không tìm thấy nhân viên.</div>
+
+                <div className="absolute inset-0">
+                  {processedSchedules.map((schedule) => {
+                    const user = schedule.user;
+                    const timeStyle = calculateBlockStyle(schedule.startTime, schedule.endTime);
+                    const leftPosition = (schedule.column * (CARD_WIDTH + CARD_GAP)) + CARD_GAP;
+
+                    return (
+                      <div
+                        key={schedule.id}
+                        className={`absolute p-3 rounded-2xl border-2 transition-all duration-200 hover:scale-[1.02] hover:shadow-lg hover:z-20 overflow-hidden flex flex-col justify-between group cursor-pointer ${getStatusColor(schedule.status)}`}
+                        style={{ ...timeStyle, width: `${CARD_WIDTH}px`, left: `${leftPosition}px` }}
+                        onClick={() => handleEdit(schedule)}
+                      >
+                        <div className="flex justify-between items-start">
+                          <Avatar className="h-9 w-9 border border-white shadow-sm">
+                            <AvatarImage src={user?.avatar} className="object-cover" />
+                            <AvatarFallback className="bg-blue-100 text-blue-700 font-bold text-xs">{user?.name?.charAt(0).toUpperCase()}</AvatarFallback>
+                          </Avatar>
+                          <div className="opacity-0 group-hover:opacity-100 transition-opacity bg-white/80 backdrop-blur-sm rounded-lg flex gap-1 p-0.5 shadow-sm border border-slate-100">
+                            <Button size="icon" variant="ghost" className="h-6 w-6 hover:bg-rose-100 text-rose-600 rounded-md"
+                              onClick={(e) => { e.stopPropagation(); handleDelete(schedule.id); }}>
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </Button>
+                          </div>
+                        </div>
+
+                        <div className="mt-2">
+                          <div className="font-bold text-[13px] text-slate-800 leading-tight truncate">{user?.name}</div>
+                          <div className="text-[10px] mt-0.5 font-bold text-slate-500 uppercase tracking-wider truncate">{user?.role}</div>
+                        </div>
+
+                        <div className="pt-2 border-t border-black/5 mt-2 flex items-center justify-between">
+                          <span className="flex items-center gap-1 font-bold text-[11px] text-slate-600">
+                            <Clock className="w-3 h-3 text-slate-400" />
+                            {format(new Date(schedule.startTime), "HH:mm")} - {format(new Date(schedule.endTime), "HH:mm")}
+                          </span>
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* ================= KHỐI BÊN PHẢI: SIDEBAR LỊCH & CHỜ DUYỆT ================= */}
+      <div className="w-full xl:w-[340px] flex flex-col gap-6 shrink-0">
+
+        <div className="bg-white rounded-3xl p-5 shadow-sm border border-slate-100">
+          <h3 className="font-black text-slate-800 text-lg mb-4 flex items-center gap-2">
+            <CalendarIcon className="w-5 h-5 text-blue-600" /> Chọn ngày xem
+          </h3>
+          <div className="flex justify-center border border-slate-100 rounded-2xl p-2 bg-slate-50/50">
+            <Calendar
+              mode="single"
+              selected={selectedDate}
+              onSelect={(date) => date && setSelectedDate(date)}
+              locale={vi}
+              className="bg-transparent"
+              classNames={{
+                day_selected: "bg-blue-600 text-white hover:bg-blue-600 hover:text-white focus:bg-blue-600 focus:text-white",
+                day_today: "bg-blue-50 text-blue-600 font-bold",
+              }}
+            />
+          </div>
+        </div>
+
+        <div className="bg-white rounded-3xl p-5 shadow-sm border border-slate-100 flex-1 flex flex-col min-h-[300px]">
+          {/* HEADER & NÚT CÔNG BỐ */}
+          <div className="flex justify-between items-center mb-4">
+            <div className="flex flex-col">
+              <h3 className="font-black text-slate-800 text-lg">Chờ công bố ({unpublishedApproved.length})</h3>
+              <span className="text-xs font-bold text-slate-400">Các ca từ hiện tại trở đi</span>
+            </div>
+
+            {/* Nút chỉ hiện khi là quản lý và có ca chờ công bố */}
+            {isManager && unpublishedApproved.length > 0 && (
+              <Button
+                onClick={() => setIsPublishModalOpen(true)} // 👈 ĐỔI THÀNH MỞ MODAL
+                disabled={isPublishing}
+                size="sm"
+                className="bg-blue-600 hover:bg-blue-700 text-white font-bold h-8 px-3 rounded-lg shadow-sm"
+              >
+                <CheckCircle2 className="w-4 h-4 mr-1" />
+                Duyệt lịch làm
+              </Button>
+            )}
+          </div>
+
+          {/* DANH SÁCH CA LÀM CHỜ CÔNG BỐ */}
+          <div className="flex-1 overflow-y-auto custom-scrollbar pr-2 space-y-3">
+            {unpublishedApproved.length === 0 ? (
+              <div className="h-full flex flex-col items-center justify-center text-slate-400 gap-2 opacity-60 mt-10">
+                <CheckCircle2 className="w-10 h-10 text-blue-400" />
+                <p className="text-sm font-medium">Không có ca nào chờ công bố</p>
+              </div>
             ) : (
-              filteredUsers.map((user) => {
-                const isActive = selectedUser?.id === user.id;
-                return (
-                  <div key={user.id} onClick={() => setSelectedUser(user)} className={`flex items-center gap-3 py-2 px-3 rounded-xl cursor-pointer transition-colors ${isActive ? 'bg-blue-50 ring-1 ring-blue-200' : 'bg-white hover:bg-slate-50'}`}>
-                    <Avatar className="h-10 w-10"><AvatarImage src={user.avatar} className="object-cover" /><AvatarFallback>{user.name?.charAt(0).toUpperCase()}</AvatarFallback></Avatar>
-                    <div className="flex flex-col flex-1 overflow-hidden">
-                      <span className="font-semibold text-sm truncate text-slate-800">{user.name}</span>
-                      <span className={`text-[10px] font-bold uppercase mt-0.5 w-fit px-1.5 py-0.5 rounded-md ${user.role === 'ADMIN' ? 'bg-rose-100 text-rose-700' : 'bg-slate-100 text-slate-600'}`}>{user.role}</span>
+              unpublishedApproved.map((schedule: any) => (
+                <div
+                  key={schedule.id}
+                  // Đổi màu nền sang xanh nhạt để nhận diện đây là ca ĐÃ DUYỆT (Approved)
+                  className="p-3 rounded-xl border border-blue-200 bg-blue-50/50 flex flex-col gap-2 cursor-pointer hover:bg-blue-50 transition-colors"
+                  onClick={() => handleOpenReview(schedule)}>
+                  <div className="flex items-center gap-3">
+                    <Avatar className="h-8 w-8 border border-white shadow-sm">
+                      <AvatarImage src={schedule.user?.avatar} />
+                      <AvatarFallback className="bg-white text-blue-700 text-xs">{schedule.user?.name?.charAt(0)}</AvatarFallback>
+                    </Avatar>
+                    <div>
+                      <div className="font-bold text-sm text-slate-800">{schedule.user?.name}</div>
+
+                      {/* Bổ sung hiển thị ngày vì mảng này trải dài nhiều ngày */}
+                      <div className="text-[11px] font-semibold text-blue-600/80 mt-0.5">
+                        {format(new Date(schedule.startTime), "dd/MM/yyyy")}
+                      </div>
+                      <div className="text-xs font-bold text-blue-700 mt-0.5 flex items-center gap-1">
+                        <Clock className="w-3 h-3" />
+                        {format(new Date(schedule.startTime), "HH:mm")} - {format(new Date(schedule.endTime), "HH:mm")}
+                      </div>
                     </div>
                   </div>
-                )
-              })
+                </div>
+              ))
             )}
           </div>
         </div>
       </div>
 
-      {/* CỘT PHẢI: Bảng Grid Shift-based (THIẾT KẾ MỚI) */}
-      <div className="flex-1 bg-white rounded-3xl shadow-xl border border-slate-200 flex flex-col overflow-hidden">
+      {/* MODAL XÁC NHẬN CÔNG BỐ LỊCH */}
+      <Dialog open={isPublishModalOpen} onOpenChange={setIsPublishModalOpen}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-blue-600">
+              <BellRing className="w-5 h-5" />
+              Xác nhận công bố lịch
+            </DialogTitle>
+            <DialogDescription>
+              Bạn đang chuẩn bị chốt lịch làm việc và gửi thông báo cho nhân viên.
+            </DialogDescription>
+          </DialogHeader>
 
-        {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b z-20">
-          <div>
-            <h2 className="text-xl font-bold text-slate-800 flex items-center gap-2">
-              <Calendar className="w-5 h-5 text-blue-600" />
-              Tổng quan ca làm việc
-            </h2>
-            <p className="text-sm text-slate-500 mt-1">Cửa hàng: Cơ sở 1</p>
-          </div>
-          <div className="flex items-center gap-4">
-            <Button className="bg-blue-600 hover:bg-blue-700 text-white rounded-xl shadow-md" onClick={() => {
-              setEditingSchedule(null);
-              setIsAddModalOpen(true)
-            }}>
-              <Plus className="w-4 h-4 mr-2" /> Thêm lịch
-            </Button>
-            <div className="flex items-center bg-slate-50 rounded-xl p-1 border">
-              <Button variant="ghost" size="icon" className="h-8 w-8 hover:bg-white rounded-lg" onClick={handlePrevWeek}><ChevronLeft className="w-4 h-4" /></Button>
-              <span className="text-sm font-bold px-4 w-[220px] text-center text-slate-700">{format(startDate, "dd/MM/yyyy")} - {format(endDate, "dd/MM/yyyy")}</span>
-              <Button variant="ghost" size="icon" className="h-8 w-8 hover:bg-white rounded-lg" onClick={handleNextWeek}><ChevronRight className="w-4 h-4" /></Button>
+          <div className="py-4">
+            <div className="bg-blue-50 border border-blue-100 rounded-xl p-4 flex flex-col items-center justify-center text-center gap-2">
+              <span className="text-3xl font-black text-blue-600">{unpublishedApproved.length}</span>
+              <span className="text-sm font-semibold text-blue-800">Ca làm việc hợp lệ</span>
+              <div className="text-xs font-medium text-slate-500 bg-white px-3 py-1 rounded-full mt-2 shadow-sm border border-slate-100">
+                Tuần: {format(weekStart, "dd/MM/yyyy")} - {format(weekEnd, "dd/MM/yyyy")}
+              </div>
             </div>
+            <p className="text-sm text-slate-600 mt-4 text-center">
+              Hệ thống sẽ gửi ngay thông báo đẩy đến điện thoại của các nhân viên có ca làm trong danh sách này.
+            </p>
           </div>
-        </div>
 
-        {/* Lưới Lịch Làm Việc Mới */}
-        <div className="flex-1 overflow-auto bg-slate-50/50 p-6">
-          <div className="grid grid-cols-7 gap-4 min-w-[900px] h-full">
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsPublishModalOpen(false)} disabled={isPublishing}>
+              Hủy bỏ
+            </Button>
+            <Button
+              onClick={handlePublishAll}
+              disabled={isPublishing}
+              className="bg-blue-600 hover:bg-blue-700 text-white"
+            >
+              {isPublishing ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <CheckCircle2 className="w-4 h-4 mr-2" />}
+              Xác nhận Công bố
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
-            {weekDays.map((day, index) => {
-              const isToday = day.toDateString() === new Date().toDateString();
-
-              // 1. Lấy tất cả lịch của ngày hôm đó
-              const daySchedules = getSchedulesForDay(day);
-
-              // 2. Tách tạm ra 2 mảng Sáng/Tối để đếm người và tìm Manager hiển thị ở ngoài Grid
-              const morningSchedules = daySchedules.filter(s => s.startTime.getHours() >= 5 && s.startTime.getHours() < 14);
-              const eveningSchedules = daySchedules.filter(s => s.startTime.getHours() >= 14 && s.startTime.getHours() < 24);
-
-              const morningManager = getShiftManager(morningSchedules);
-              const eveningManager = getShiftManager(eveningSchedules);
-
-              return (
-                <div key={index} className={`flex flex-col gap-4 ${isToday ? 'ring-2 ring-blue-300 rounded-2xl bg-blue-50/50 p-1.5 -m-1.5' : ''}`}>
-
-                  {/* Tiêu đề Ngày */}
-                  <div className="text-center pb-2 border-b-2 border-slate-200/60">
-                    <div className={`text-xs font-bold uppercase tracking-wider ${isToday ? 'text-blue-600' : 'text-slate-500'}`}>
-                      {format(day, "EEEE", { locale: vi })}
-                    </div>
-                    <div className={`text-2xl font-black mt-1 ${isToday ? 'text-blue-600' : 'text-slate-800'}`}>
-                      {format(day, "dd")}
-                    </div>
-                  </div>
-
-                  {/* KHỐI CARD DUY NHẤT GỘP 2 CA (Click để xem cả ngày) */}
-                  <div
-                    onClick={() => setViewingShift({ date: day, shiftName: "Toàn bộ lịch làm việc", schedules: daySchedules })}
-                    className="flex-1 rounded-2xl border border-slate-200 bg-white shadow-sm hover:shadow-xl cursor-pointer transition-all duration-300 hover:-translate-y-1 flex flex-col overflow-hidden group"
-                  >
-
-                    {/* NỬA TRÊN: CA SÁNG */}
-                    <div className="flex-1 p-3 bg-gradient-to-br from-amber-50 to-orange-50/50 border-b border-slate-100 flex flex-col group-hover:from-amber-100/80 transition-colors">
-                      <div className="flex items-center justify-between mb-2 opacity-80 text-amber-900">
-                        <span className="font-bold text-xs">Ca Sáng</span>
-                        <SunMedium className="w-4 h-4" />
-                      </div>
-
-                      <div className="mt-auto bg-white/70 rounded-xl p-2 backdrop-blur-sm border border-white">
-                        <div className="text-[9px] uppercase font-bold text-amber-700/60 mb-0.5">Quản lý ca</div>
-                        {morningManager ? (
-                          <div className="font-bold text-xs truncate text-amber-950" title={morningManager.name}>{morningManager.name}</div>
-                        ) : (
-                          <div className="text-[11px] text-rose-500 font-bold italic">Chưa phân bổ</div>
-                        )}
-                      </div>
-                      <div className="mt-2 flex items-center gap-1.5 text-[11px] font-bold text-amber-800 opacity-80">
-                        <Users className="w-3.5 h-3.5" /> {morningSchedules.length} nhân sự
-                      </div>
-                    </div>
-
-                    {/* NỬA DƯỚI: CA TỐI */}
-                    <div className="flex-1 p-3 bg-gradient-to-br from-indigo-50 to-blue-50/50 flex flex-col group-hover:from-indigo-100/80 transition-colors">
-                      <div className="flex items-center justify-between mb-2 opacity-80 text-indigo-900">
-                        <span className="font-bold text-xs">Ca Tối</span>
-                        <MoonStar className="w-4 h-4" />
-                      </div>
-
-                      <div className="mt-auto bg-white/70 rounded-xl p-2 backdrop-blur-sm border border-white">
-                        <div className="text-[9px] uppercase font-bold text-indigo-700/60 mb-0.5">Quản lý ca</div>
-                        {eveningManager ? (
-                          <div className="font-bold text-xs truncate text-indigo-950" title={eveningManager.name}>{eveningManager.name}</div>
-                        ) : (
-                          <div className="text-[11px] text-rose-500 font-bold italic">Chưa phân bổ</div>
-                        )}
-                      </div>
-                      <div className="mt-2 flex items-center gap-1.5 text-[11px] font-bold text-indigo-800 opacity-80">
-                        <Users className="w-3.5 h-3.5" /> {eveningSchedules.length} nhân sự
-                      </div>
-                    </div>
-
-                  </div>
-                </div>
-              )
-            })}
-          </div>
-        </div>
-      </div>
-
-      <AddScheduleModal open={isAddModalOpen} onClose={() => setIsAddModalOpen(false)} users={users} defaultUserId={selectedUser?.id} editData={editingSchedule} />
-
-      <ShiftDetailsModal
-        isOpen={!!viewingShift}
+      <AddScheduleModal
+        open={isAddModalOpen}
         onClose={() => {
-          setViewingShift(null);
+          setIsAddModalOpen(false);
           setEditingSchedule(null);
         }}
-        shiftData={viewingShift}
-        onEdit={handleEditSchedule}
-        onDelete={handleDeleteSchedule}
+        users={users}
+        editData={editingSchedule}
+        isManager={isManager}
+        currentUser={currentUser}
       />
 
+      <ReviewScheduleModal
+        open={isReviewModalOpen}
+        onClose={() => {
+          setIsReviewModalOpen(false);
+          setScheduleToReview(null);
+        }}
+        schedule={scheduleToReview}
+      />
     </div>
   )
 }

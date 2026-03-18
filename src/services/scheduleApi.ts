@@ -1,53 +1,63 @@
-
 import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react'
 import { getSession } from 'next-auth/react';
-
 
 export interface Schedule {
   id: number;
   userId: number;
-  startTime: string; // Dữ liệu từ API trả về là dạng chuỗi
+  startTime: string; 
   endTime: string;
   status: string;
   note?: string;
+  // 👇 Cập nhật thêm 2 trường mới cho interface để Typescript nhận diện
+  isPublished: boolean;
+  attendanceStatus: string;
 }
+
+export interface ScheduleSettings {
+  id: number;
+  isOpen: boolean;
+  closeTime: string;
+  shiftStartDate: string;
+  shiftEndDate: string;
+}
+
 export const scheduleApi = createApi({
   reducerPath: 'scheduleApi',
   baseQuery: fetchBaseQuery({
     baseUrl: 'http://localhost:8386',
     prepareHeaders: async (headers) => {
-      // Nhớ cấu hình lấy Token giống bên userApi nhé!
       const session: any = await getSession();
       const token = session?.accessToken;
       if (token) {
-        // 2. Cắt bỏ dấu ngoặc kép thừa (nếu có)
         headers.set('authorization', `Bearer ${token}`);
       }
       return headers;
     },
   }),
-  tagTypes: ['Schedules'],
+  tagTypes: ['Schedules', 'ScheduleSettings'], 
   endpoints: (builder) => ({
-    // Gọi API thêm lịch mới
-    createSchedule: builder.mutation<any, { userId: number; startTime: string; endTime: string; note?: string }>({
+    
+    createSchedule: builder.mutation<any, { userId: number; startTime: string; endTime: string; note?: string; settingId?: number }>({
       query: (body) => ({
         url: '/schedule',
         method: 'POST',
         body,
       }),
-      invalidatesTags: ['Schedules'], // Báo hiệu làm mới danh sách lịch
+      invalidatesTags: ['Schedules'],
     }),
+    
     getSchedules: builder.query<Schedule[], { startDate: string; endDate: string }>({
       query: ({ startDate, endDate }) => `/schedule?startDate=${startDate}&endDate=${endDate}`,
       providesTags: ['Schedules'],
     }),
+    
     updateSchedule: builder.mutation<any, { id: number; data: any }>({
       query: ({ id, data }) => ({
         url: `/schedule/${id}`,
-        method: 'PATCH', // Hoặc PATCH tùy thuộc vào backend của bạn
+        method: 'PATCH', 
         body: data,
       }),
-      invalidatesTags: ['Schedules'], // Kích hoạt tải lại dữ liệu
+      invalidatesTags: ['Schedules'], 
     }),
 
     deleteSchedule: builder.mutation<any, number>({
@@ -55,9 +65,42 @@ export const scheduleApi = createApi({
         url: `/schedule/${id}`,
         method: 'DELETE',
       }),
-      invalidatesTags: ['Schedules'], // Kích hoạt tải lại dữ liệu
+      invalidatesTags: ['Schedules'], 
+    }),
+
+    getScheduleSettings: builder.query<ScheduleSettings, void>({
+      query: () => '/notifications/schedule-settings', 
+      providesTags: ['ScheduleSettings'], 
+    }),
+    
+    openScheduleSetting: builder.mutation<any, { closeTime: string; shiftStartDate: string; shiftEndDate: string }>({
+      query: (body) => ({
+        url: '/schedule/open-setting', 
+        method: 'POST',
+        body,
+      }),
+      invalidatesTags: ['ScheduleSettings'], 
+    }),
+
+    // 👇 ĐÃ ĐỔI TÊN HÀM VÀ ĐƯỜNG DẪN URL THÀNH PUBLISH 👇
+    publishSchedules: builder.mutation<any, { scheduleIds: number[], startDate: string, endDate: string }>({
+      query: (body) => ({
+        url: '/schedule/publish', 
+        method: 'PATCH',
+        body, // Gửi cả scheduleIds, startDate và endDate xuống BE
+      }),
+      invalidatesTags: ['Schedules'],
     }),
   }),
 })
 
-export const { useCreateScheduleMutation, useGetSchedulesQuery, useUpdateScheduleMutation, useDeleteScheduleMutation } = scheduleApi
+export const {
+  useCreateScheduleMutation,
+  useGetSchedulesQuery,
+  useUpdateScheduleMutation,
+  useDeleteScheduleMutation,
+  useGetScheduleSettingsQuery,
+  useOpenScheduleSettingMutation,
+  // 👇 ĐÃ ĐỔI TÊN EXPORT HOOK THÀNH PUBLISH 👇
+  usePublishSchedulesMutation
+} = scheduleApi

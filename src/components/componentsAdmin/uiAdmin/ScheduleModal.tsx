@@ -4,9 +4,9 @@ import { useEffect, useState } from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
-import { Loader2, CalendarClock, CalendarIcon, Clock, Edit } from "lucide-react"
+import { Loader2, CalendarClock, CalendarIcon, Clock, Edit, CheckCircle2 } from "lucide-react"
 import { toast } from "sonner"
-import { format } from "date-fns" 
+import { format } from "date-fns"
 import { vi } from "date-fns/locale"
 
 import { Button } from "@/components/ui/button"
@@ -19,7 +19,6 @@ import { Calendar } from "@/components/ui/calendar"
 import { cn } from "@/lib/utils"
 
 import { User } from "@/services/userApi"
-// 👇 1. Thêm hook Update vào
 import { useCreateScheduleMutation, useUpdateScheduleMutation } from "@/services/scheduleApi"
 
 const generateTimeSlots = () => {
@@ -34,7 +33,7 @@ const generateTimeSlots = () => {
 const TIME_SLOTS = generateTimeSlots();
 
 const scheduleSchema = z.object({
-  userId: z.string().min(1, "Vui lòng chọn nhân viên"),
+  userId: z.string().optional(),
   date: z.date({
     required_error: "Vui lòng chọn ngày làm việc",
   }),
@@ -51,18 +50,21 @@ interface AddScheduleProps {
   onClose: () => void;
   users: User[];
   defaultUserId?: string | number;
-  // 👇 2. Khai báo thêm prop editData
-  editData?: any | null; 
+  editData?: any | null;
+  isManager: boolean;
+  currentUser: any;
 }
 
-export function AddScheduleModal({ open, onClose, users, defaultUserId, editData }: AddScheduleProps) {
+export function AddScheduleModal({ open, onClose, users, defaultUserId, editData, isManager, currentUser }: AddScheduleProps) {
   const [createSchedule, { isLoading: isCreating }] = useCreateScheduleMutation();
-  const [updateSchedule, { isLoading: isUpdating }] = useUpdateScheduleMutation(); // 👈 Khởi tạo hook update
+  const [updateSchedule, { isLoading: isUpdating }] = useUpdateScheduleMutation();
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
 
-  // Gộp cờ loading và xác định chế độ (Thêm hay Sửa)
   const isLoading = isCreating || isUpdating;
   const isEditMode = !!editData;
+  
+  // KIỂM TRA XEM CÓ PHẢI LÀ QUẢN LÝ ĐANG SỬA CA CHỜ DUYỆT KHÔNG
+  const isPendingReview = isEditMode && isManager && editData?.status === 'PENDING';
 
   const form = useForm<z.infer<typeof scheduleSchema>>({
     resolver: zodResolver(scheduleSchema),
@@ -74,25 +76,22 @@ export function AddScheduleModal({ open, onClose, users, defaultUserId, editData
     },
   })
 
-  // 👇 3. LOGIC ĐIỀN DỮ LIỆU TỰ ĐỘNG KHI MỞ MODAL
   useEffect(() => {
     if (open) {
       if (editData) {
-        // Nếu là Sửa: Bóc tách data cũ để điền vào Form
         const startDate = new Date(editData.startTime);
         const endDate = new Date(editData.endTime);
-        
+
         form.reset({
           userId: String(editData.userId),
-          date: startDate, // Lấy ngày
-          startTime: format(startDate, "HH:mm"), // Bóc tách Giờ Bắt đầu
-          endTime: format(endDate, "HH:mm"),     // Bóc tách Giờ Kết thúc
+          date: startDate, 
+          startTime: format(startDate, "HH:mm"), 
+          endTime: format(endDate, "HH:mm"),     
           note: editData.note || "",
         });
       } else {
-        // Nếu là Thêm Mới: Form trống như cũ
         form.reset({
-          userId: defaultUserId ? String(defaultUserId) : "",
+          userId: isManager ? "" : String(currentUser?.id),
           date: new Date(),
           startTime: "06:30",
           endTime: "22:30",
@@ -100,9 +99,23 @@ export function AddScheduleModal({ open, onClose, users, defaultUserId, editData
         });
       }
     }
-  }, [open, defaultUserId, editData, form])
-
+  // 👇 ĐIỂM QUAN TRỌNG NHẤT LÀ Ở ĐÂY 👇
+  // Đổi `editData` thành `editData?.id` để tránh việc RTK Query polling làm reset form
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, editData?.id, defaultUserId, isManager, currentUser?.id]);
   async function onSubmit(values: z.infer<typeof scheduleSchema>) {
+    if (isManager && !values.userId) {
+      form.setError("userId", { type: "manual", message: "Vui lòng chọn nhân viên" });
+      return;
+    }
+
+    const finalUserId = isManager ? Number(values.userId) : Number(currentUser?.id);
+
+    if (!finalUserId || isNaN(finalUserId)) {
+      toast.error("Hệ thống chưa tải xong thông tin người dùng, vui lòng thử lại!");
+      return;
+    }
+
     const year = values.date.getFullYear();
     const month = values.date.getMonth();
     const day = values.date.getDate();
@@ -113,74 +126,99 @@ export function AddScheduleModal({ open, onClose, users, defaultUserId, editData
     const startDateTime = new Date(year, month, day, startHour, startMinute).toISOString();
     const endDateTime = new Date(year, month, day, endHour, endMinute).toISOString();
 
-    const payload = {
-      userId: Number(values.userId),
+    const payload: any = {
+      userId: finalUserId, 
       startTime: startDateTime,
       endTime: endDateTime,
       note: values.note,
     }
 
+    // 👇 NẾU QUẢN LÝ BẤM DUYỆT TRONG MODAL NÀY, ĐÍNH KÈM STATUS LÀ APPROVED
+    if (isPendingReview) {
+      payload.status = 'APPROVED';
+    }
+
     try {
-      // 👇 4. PHÂN LUỒNG GỌI API (Thêm vs Sửa)
       if (isEditMode) {
         await updateSchedule({ id: editData.id, data: payload }).unwrap();
-        toast.success("Cập nhật lịch làm việc thành công!");
+        toast.success(isPendingReview ? "Đã duyệt ca làm việc thành công!" : "Cập nhật lịch làm việc thành công!");
       } else {
         await createSchedule(payload).unwrap();
-        toast.success("Thêm lịch làm việc thành công!");
+        toast.success("Đăng ký ca làm thành công!");
       }
       onClose();
     } catch (error: any) {
-      console.error("Lỗi:", error);
-      toast.error(error.data?.message || `Lỗi khi ${isEditMode ? 'cập nhật' : 'thêm'} ca làm việc`);
+      console.error("Lỗi chi tiết từ API:", error?.data || error);
+      const errMsg = error?.data?.message;
+      if (Array.isArray(errMsg)) {
+        toast.error(errMsg[0]); 
+      } else {
+        toast.error(errMsg || `Lỗi khi ${isEditMode ? 'cập nhật' : 'thêm'} ca làm việc`);
+      }
     }
   }
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
       <DialogContent className="w-[95vw] sm:max-w-[480px] p-4 sm:p-6 rounded-lg">
-        
-        {/* 👇 5. THAY ĐỔI TIÊU ĐỀ THEO CHẾ ĐỘ */}
+
         <DialogHeader className="text-left">
           <DialogTitle className="flex items-center gap-2 text-lg sm:text-xl">
-            {isEditMode ? (
-              <Edit className="w-5 h-5 text-emerald-600 shrink-0" />
+            {isPendingReview ? (
+              <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" />
+            ) : isEditMode ? (
+              <Edit className="w-5 h-5 text-blue-600 shrink-0" />
             ) : (
               <CalendarClock className="w-5 h-5 text-blue-600 shrink-0" />
             )}
-            {isEditMode ? "Chỉnh sửa lịch làm việc" : "Phân công ca làm việc"}
+            
+            {/* THAY ĐỔI TIÊU ĐỀ THEO TRẠNG THÁI */}
+            {isPendingReview ? "Xem xét & Duyệt ca làm" : isEditMode ? "Chỉnh sửa lịch làm việc" : "Phân công ca làm việc"}
           </DialogTitle>
           <DialogDescription className="text-sm text-slate-500">
-            {isEditMode ? "Thay đổi thông tin ca làm việc của nhân viên." : "Chọn ngày và khung giờ làm việc cho nhân viên."}
+            {isPendingReview ? "Bạn có thể điều chỉnh lại giờ trước khi duyệt ca này." : isEditMode ? "Thay đổi thông tin ca làm việc của nhân viên." : "Chọn ngày và khung giờ làm việc cho nhân viên."}
           </DialogDescription>
         </DialogHeader>
 
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 mt-2">
 
-            {/* Nhân Viên */}
-            <FormField control={form.control} name="userId" render={({ field }) => (
-              <FormItem>
-                <FormLabel>Nhân sự phụ trách <span className="text-red-500">*</span></FormLabel>
-                <Select onValueChange={field.onChange} value={field.value} defaultValue={field.value} disabled={isEditMode}>
-                  {/* NOTE: Thường khi sửa ca làm, ta không cho phép đổi nhân viên (chỉ đổi giờ). 
-                      Nếu muốn cho phép đổi nhân viên, hãy bỏ chữ `disabled={isEditMode}` đi nhé */}
-                  <FormControl>
-                    <SelectTrigger className="bg-slate-50 w-full disabled:opacity-70 disabled:cursor-not-allowed">
-                      <SelectValue placeholder="-- Chọn nhân viên --" />
-                    </SelectTrigger>
-                  </FormControl>
-                  <SelectContent>
-                    {users.map(u => (
-                      <SelectItem key={u.id} value={String(u.id)}>
-                        {u.name} - {u.role}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <FormMessage />
-              </FormItem>
-            )} />
+            {/* CHỈ HIỂN THỊ Ô CHỌN NHÂN VIÊN NẾU LÀ QUẢN LÝ */}
+            <div className={isManager ? "block" : "hidden"}>
+              <FormField
+                control={form.control}
+                name="userId"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Nhân sự phụ trách <span className="text-red-500">*</span></FormLabel>
+                    <Select
+                      onValueChange={field.onChange}
+                      value={field.value || ""}
+                      defaultValue={field.value}
+                      disabled={isEditMode}
+                    >
+                      <FormControl>
+                        <SelectTrigger className="bg-slate-50">
+                          <SelectValue placeholder="-- Chọn nhân viên --" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {users && users.length > 0 ? (
+                          users.map((u) => (
+                            <SelectItem key={u.id} value={String(u.id)}>
+                              {u.name}
+                            </SelectItem>
+                          ))
+                        ) : (
+                          <SelectItem value="empty" disabled>Không có nhân viên nào</SelectItem>
+                        )}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
 
             {/* Ngày Làm Việc */}
             <FormField control={form.control} name="date" render={({ field }) => (
@@ -209,7 +247,6 @@ export function AddScheduleModal({ open, onClose, users, defaultUserId, editData
                         field.onChange(date);
                         setIsCalendarOpen(false);
                       }}
-                      // disabled={(date) => date < new Date(new Date().setHours(0, 0, 0, 0))} // Có thể tắt disabled nếu muốn sửa ca làm trong quá khứ
                       initialFocus
                       locale={vi}
                       classNames={{
@@ -223,7 +260,7 @@ export function AddScheduleModal({ open, onClose, users, defaultUserId, editData
               </FormItem>
             )} />
 
-            {/* Khung Giờ */}
+            {/* Khung Giờ */}   
             <div className="grid grid-cols-2 gap-4">
               <FormField control={form.control} name="startTime" render={({ field }) => (
                 <FormItem>
@@ -289,14 +326,15 @@ export function AddScheduleModal({ open, onClose, users, defaultUserId, editData
               <Button type="button" variant="outline" onClick={onClose} className="w-full sm:w-auto">
                 Hủy bỏ
               </Button>
-              {/* 👇 6. THAY ĐỔI MÀU NÚT THEO CHẾ ĐỘ */}
-              <Button 
-                type="submit" 
-                disabled={isLoading} 
-                className={`w-full sm:w-auto ${isEditMode ? 'bg-emerald-600 hover:bg-emerald-700' : 'bg-blue-600 hover:bg-blue-700'}`}
+              
+              {/* 👇 ĐỔI MÀU & TEXT NÚT THEO TRẠNG THÁI */}
+              <Button
+                type="submit"
+                disabled={isLoading}
+                className={`w-full sm:w-auto ${isPendingReview ? 'bg-emerald-600 hover:bg-emerald-700' : 'bg-blue-600 hover:bg-blue-700'}`}
               >
                 {isLoading ? <Loader2 className="animate-spin w-4 h-4 mr-2" /> : null}
-                {isEditMode ? "Lưu thay đổi" : "Lưu phân công"}
+                {isPendingReview ? "Lưu & Duyệt ca" : isEditMode ? "Lưu thay đổi" : "Lưu phân công"}
               </Button>
             </DialogFooter>
           </form>
