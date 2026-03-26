@@ -8,21 +8,20 @@ import { useState, Dispatch, SetStateAction } from "react"; // Import thêm Disp
 import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
 
-// 1. Định nghĩa kiểu dữ liệu cho Props nhận vào
 interface LoginProps {
     openFormLogin: boolean;
-    setOpenFormLogin: Dispatch<SetStateAction<boolean>>; 
-    // Hoặc viết đơn giản: (value: boolean) => void;
+    setOpenFormLogin: Dispatch<SetStateAction<boolean>>;
+    onSwitchToRegister: () => void; // 👈 Thêm dòng này
 }
 
 // 2. Nhận props vào hàm
-const Login = ({ openFormLogin, setOpenFormLogin }: LoginProps) => {
-    
+const Login = ({ openFormLogin, setOpenFormLogin, onSwitchToRegister }: LoginProps) => {
+
     // State nội bộ để xử lý form
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [showPassword, setShowPassword] = useState(false);
-    
+
     // State xử lý loading và lỗi
     const [isLoading, setIsLoading] = useState(false);
     const [errorMsg, setErrorMsg] = useState('');
@@ -48,7 +47,7 @@ const Login = ({ openFormLogin, setOpenFormLogin }: LoginProps) => {
             } else {
                 // Thành công:
                 setOpenFormLogin(false); // Đóng form bằng hàm từ Cha gửi xuống
-                router.refresh(); 
+                router.refresh();
             }
         } catch (error) {
             setErrorMsg("Lỗi kết nối, vui lòng thử lại.");
@@ -61,7 +60,7 @@ const Login = ({ openFormLogin, setOpenFormLogin }: LoginProps) => {
         <>
             {/* Lớp phủ mờ (Overlay) - Bấm ra ngoài thì đóng */}
             {openFormLogin && (
-                <div 
+                <div
                     className="fixed inset-0 bg-black/50 z-40 transition-opacity"
                     onClick={() => setOpenFormLogin(false)}
                 ></div>
@@ -146,10 +145,16 @@ const Login = ({ openFormLogin, setOpenFormLogin }: LoginProps) => {
                             >
                                 {isLoading ? "Processing..." : "Sign In"}
                             </button>
-                            
+
                             {/* Footer Link */}
                             <p className="text-center text-sm text-gray-600">
-                                Don’t have an account? <span className="text-[#C19D56] cursor-pointer hover:underline">Sign Up</span>
+                                Don’t have an account?
+                                <span
+                                    className="text-[#C19D56] cursor-pointer hover:underline font-medium"
+                                    onClick={onSwitchToRegister} // 👈 Gắn sự kiện click vào đây
+                                >
+                                    Sign Up
+                                </span>
                             </p>
                         </form>
                     </div>

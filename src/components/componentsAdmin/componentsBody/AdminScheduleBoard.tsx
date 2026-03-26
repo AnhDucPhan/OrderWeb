@@ -127,32 +127,26 @@ export default function AdminScheduleBoard() {
   // XỬ LÝ DỮ LIỆU (Chỉ chạy khi có thay đổi)
   // ==============================================
   const { processedSchedules, pendingSchedules, unpublishedApproved, futurePending } = useMemo(() => {
-    // 1. PHÂN QUYỀN: Quản lý thấy tất cả, Nhân viên chỉ thấy lịch của mình
-    const allowedSchedules = isManager
-      ? allSchedules
-      : allSchedules.filter((s: any) => s.userId === Number(currentUser?.id));
+    
+    // 👇 SỬA ĐỔI: TẤT CẢ MỌI NGƯỜI ĐỀU ĐƯỢC NHÌN THẤY TOÀN BỘ LỊCH
+    // Nếu bạn chỉ muốn nhân viên thấy lịch đã duyệt, hãy thêm: allSchedules.filter(s => s.status === 'APPROVED')
+    const allowedSchedules = allSchedules;
 
     // ==========================================
     // KHỐI 1: DỮ LIỆU CHO TIMELINE GIỮA MÀN HÌNH
     // ==========================================
-    // Chỉ lấy những ca làm nằm trong ngày đang được chọn (selectedDate)
     const schedulesForSelectedDay = allowedSchedules.filter((s: any) =>
       isSameDay(new Date(s.startTime), selectedDate)
     );
 
-    // Tính toán thuật toán xếp cột để vẽ UI
     const processed = processSchedules(schedulesForSelectedDay);
-
-    // Ca chờ duyệt của ĐÚNG ngày hôm đó (giữ lại để code UI cũ không bị lỗi)
     const pending = schedulesForSelectedDay.filter((s: any) => s.status === 'PENDING');
-
 
     // ==========================================
     // KHỐI 2: DỮ LIỆU CHO SIDEBAR BÊN PHẢI (CÔNG BỐ)
     // ==========================================
-    const now = new Date(); // Lấy mốc thời gian hiện tại
+    const now = new Date(); 
 
-    // A. Danh sách sẵn sàng CÔNG BỐ (Nút xanh lá): Đã duyệt + Chưa công bố + Ở tương lai
     const readyToPublish = allowedSchedules
       .filter((s: any) =>
         s.status === 'APPROVED' &&
@@ -161,7 +155,6 @@ export default function AdminScheduleBoard() {
       )
       .sort((a: any, b: any) => new Date(a.startTime).getTime() - new Date(b.startTime).getTime());
 
-    // B. Danh sách CHỜ DUYỆT (Nhắc nhở Quản lý): Đang Pending + Ở tương lai
     const pendingInFuture = allowedSchedules
       .filter((s: any) =>
         s.status === 'PENDING' &&
@@ -173,10 +166,10 @@ export default function AdminScheduleBoard() {
     return {
       processedSchedules: processed,
       pendingSchedules: pending,
-      unpublishedApproved: readyToPublish, // 👈 Dùng mảng này cho nút "Duyệt & Công Bố Hết"
-      futurePending: pendingInFuture       // 👈 Dùng mảng này để hiển thị nhắc nhở Quản lý
+      unpublishedApproved: readyToPublish, 
+      futurePending: pendingInFuture       
     };
-  }, [allSchedules, selectedDate, isManager, currentUser]);
+  }, [allSchedules, selectedDate]); // 👈 Bỏ isManager và currentUser ra khỏi dependency vì giờ ai cũng thấy hết
 
   const containerMinWidth = useMemo(() => {
     if (processedSchedules.length === 0) return 0;
@@ -189,7 +182,6 @@ export default function AdminScheduleBoard() {
     try {
       const idsToPublish = unpublishedApproved.map((s: any) => s.id);
 
-      // 👇 TRUYỀN THÊM NGÀY BẮT ĐẦU VÀ KẾT THÚC CỦA TUẦN VÀO ĐÂY 👇
       await publishSchedules({
         scheduleIds: idsToPublish,
         startDate: weekStart.toISOString(),
@@ -245,18 +237,21 @@ export default function AdminScheduleBoard() {
             </div>
           </div>
 
-          <div className="flex items-center gap-3">
-            {isManager && <BroadcastScheduleModal />}
-            <Button
-              className="bg-blue-600 hover:bg-blue-700 text-white rounded-xl shadow-sm px-5 h-10 font-medium"
-              onClick={() => {
-                setEditingSchedule(null);
-                setIsAddModalOpen(true);
-              }}
-            >
-              <Plus className="w-4 h-4 mr-2" /> Tạo ca làm
-            </Button>
-          </div>
+          {/* 👇 SỬA ĐỔI: CHỈ RENDER KHỐI NÚT NÀY NẾU LÀ QUẢN LÝ 👇 */}
+          {isManager && (
+            <div className="flex items-center gap-3">
+              <BroadcastScheduleModal />
+              <Button
+                className="bg-blue-600 hover:bg-blue-700 text-white rounded-xl shadow-sm px-5 h-10 font-medium"
+                onClick={() => {
+                  setEditingSchedule(null);
+                  setIsAddModalOpen(true);
+                }}
+              >
+                <Plus className="w-4 h-4 mr-2" /> Tạo ca làm
+              </Button>
+            </div>
+          )}
         </div>
 
         {/* TIMELINE CONTENT */}
@@ -297,21 +292,27 @@ export default function AdminScheduleBoard() {
                     return (
                       <div
                         key={schedule.id}
-                        className={`absolute p-3 rounded-2xl border-2 transition-all duration-200 hover:scale-[1.02] hover:shadow-lg hover:z-20 overflow-hidden flex flex-col justify-between group cursor-pointer ${getStatusColor(schedule.status)}`}
+                        // 👇 SỬA ĐỔI: NẾU KHÔNG PHẢI QUẢN LÝ THÌ XÓA CON TRỎ CHUỘT (cursor-default) VÀ KHÔNG CÓ HIỆU ỨNG NỔI LÊN 👇
+                        className={`absolute p-3 rounded-2xl border-2 transition-all duration-200 overflow-hidden flex flex-col justify-between group ${getStatusColor(schedule.status)} ${isManager ? 'hover:scale-[1.02] hover:shadow-lg hover:z-20 cursor-pointer' : 'cursor-default'}`}
                         style={{ ...timeStyle, width: `${CARD_WIDTH}px`, left: `${leftPosition}px` }}
-                        onClick={() => handleEdit(schedule)}
+                        // Chỉ cho phép click để mở form Sửa nếu là Quản lý
+                        onClick={() => isManager && handleEdit(schedule)}
                       >
                         <div className="flex justify-between items-start">
                           <Avatar className="h-9 w-9 border border-white shadow-sm">
                             <AvatarImage src={user?.avatar} className="object-cover" />
                             <AvatarFallback className="bg-blue-100 text-blue-700 font-bold text-xs">{user?.name?.charAt(0).toUpperCase()}</AvatarFallback>
                           </Avatar>
-                          <div className="opacity-0 group-hover:opacity-100 transition-opacity bg-white/80 backdrop-blur-sm rounded-lg flex gap-1 p-0.5 shadow-sm border border-slate-100">
-                            <Button size="icon" variant="ghost" className="h-6 w-6 hover:bg-rose-100 text-rose-600 rounded-md"
-                              onClick={(e) => { e.stopPropagation(); handleDelete(schedule.id); }}>
-                              <Trash2 className="w-3.5 h-3.5" />
-                            </Button>
-                          </div>
+                          
+                          {/* 👇 SỬA ĐỔI: CHỈ HIỂN THỊ NÚT XÓA NẾU LÀ QUẢN LÝ 👇 */}
+                          {isManager && (
+                            <div className="opacity-0 group-hover:opacity-100 transition-opacity bg-white/80 backdrop-blur-sm rounded-lg flex gap-1 p-0.5 shadow-sm border border-slate-100">
+                              <Button size="icon" variant="ghost" className="h-6 w-6 hover:bg-rose-100 text-rose-600 rounded-md"
+                                onClick={(e) => { e.stopPropagation(); handleDelete(schedule.id); }}>
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </Button>
+                            </div>
+                          )}
                         </div>
 
                         <div className="mt-2">
@@ -357,65 +358,65 @@ export default function AdminScheduleBoard() {
           </div>
         </div>
 
-        <div className="bg-white rounded-3xl p-5 shadow-sm border border-slate-100 flex-1 flex flex-col min-h-[300px]">
-          {/* HEADER & NÚT CÔNG BỐ */}
-          <div className="flex justify-between items-center mb-4">
-            <div className="flex flex-col">
-              <h3 className="font-black text-slate-800 text-lg">Chờ công bố ({unpublishedApproved.length})</h3>
-              <span className="text-xs font-bold text-slate-400">Các ca từ hiện tại trở đi</span>
+        {/* 👇 SỬA ĐỔI: TOÀN BỘ KHỐI "CHỜ CÔNG BỐ" ĐƯỢC BỌC TRONG ĐIỀU KIỆN isManager 👇 */}
+        {isManager && (
+          <div className="bg-white rounded-3xl p-5 shadow-sm border border-slate-100 flex-1 flex flex-col min-h-[300px]">
+            {/* HEADER & NÚT CÔNG BỐ */}
+            <div className="flex justify-between items-center mb-4">
+              <div className="flex flex-col">
+                <h3 className="font-black text-slate-800 text-lg">Chờ công bố ({unpublishedApproved.length})</h3>
+                <span className="text-xs font-bold text-slate-400">Các ca từ hiện tại trở đi</span>
+              </div>
+
+              {unpublishedApproved.length > 0 && (
+                <Button
+                  onClick={() => setIsPublishModalOpen(true)}
+                  disabled={isPublishing}
+                  size="sm"
+                  className="bg-blue-600 hover:bg-blue-700 text-white font-bold h-8 px-3 rounded-lg shadow-sm"
+                >
+                  <CheckCircle2 className="w-4 h-4 mr-1" />
+                  Duyệt lịch làm
+                </Button>
+              )}
             </div>
 
-            {/* Nút chỉ hiện khi là quản lý và có ca chờ công bố */}
-            {isManager && unpublishedApproved.length > 0 && (
-              <Button
-                onClick={() => setIsPublishModalOpen(true)} // 👈 ĐỔI THÀNH MỞ MODAL
-                disabled={isPublishing}
-                size="sm"
-                className="bg-blue-600 hover:bg-blue-700 text-white font-bold h-8 px-3 rounded-lg shadow-sm"
-              >
-                <CheckCircle2 className="w-4 h-4 mr-1" />
-                Duyệt lịch làm
-              </Button>
-            )}
-          </div>
+            {/* DANH SÁCH CA LÀM CHỜ CÔNG BỐ */}
+            <div className="flex-1 overflow-y-auto custom-scrollbar pr-2 space-y-3">
+              {unpublishedApproved.length === 0 ? (
+                <div className="h-full flex flex-col items-center justify-center text-slate-400 gap-2 opacity-60 mt-10">
+                  <CheckCircle2 className="w-10 h-10 text-blue-400" />
+                  <p className="text-sm font-medium">Không có ca nào chờ công bố</p>
+                </div>
+              ) : (
+                unpublishedApproved.map((schedule: any) => (
+                  <div
+                    key={schedule.id}
+                    className="p-3 rounded-xl border border-blue-200 bg-blue-50/50 flex flex-col gap-2 cursor-pointer hover:bg-blue-50 transition-colors"
+                    onClick={() => handleOpenReview(schedule)}>
+                    <div className="flex items-center gap-3">
+                      <Avatar className="h-8 w-8 border border-white shadow-sm">
+                        <AvatarImage src={schedule.user?.avatar} />
+                        <AvatarFallback className="bg-white text-blue-700 text-xs">{schedule.user?.name?.charAt(0)}</AvatarFallback>
+                      </Avatar>
+                      <div>
+                        <div className="font-bold text-sm text-slate-800">{schedule.user?.name}</div>
 
-          {/* DANH SÁCH CA LÀM CHỜ CÔNG BỐ */}
-          <div className="flex-1 overflow-y-auto custom-scrollbar pr-2 space-y-3">
-            {unpublishedApproved.length === 0 ? (
-              <div className="h-full flex flex-col items-center justify-center text-slate-400 gap-2 opacity-60 mt-10">
-                <CheckCircle2 className="w-10 h-10 text-blue-400" />
-                <p className="text-sm font-medium">Không có ca nào chờ công bố</p>
-              </div>
-            ) : (
-              unpublishedApproved.map((schedule: any) => (
-                <div
-                  key={schedule.id}
-                  // Đổi màu nền sang xanh nhạt để nhận diện đây là ca ĐÃ DUYỆT (Approved)
-                  className="p-3 rounded-xl border border-blue-200 bg-blue-50/50 flex flex-col gap-2 cursor-pointer hover:bg-blue-50 transition-colors"
-                  onClick={() => handleOpenReview(schedule)}>
-                  <div className="flex items-center gap-3">
-                    <Avatar className="h-8 w-8 border border-white shadow-sm">
-                      <AvatarImage src={schedule.user?.avatar} />
-                      <AvatarFallback className="bg-white text-blue-700 text-xs">{schedule.user?.name?.charAt(0)}</AvatarFallback>
-                    </Avatar>
-                    <div>
-                      <div className="font-bold text-sm text-slate-800">{schedule.user?.name}</div>
-
-                      {/* Bổ sung hiển thị ngày vì mảng này trải dài nhiều ngày */}
-                      <div className="text-[11px] font-semibold text-blue-600/80 mt-0.5">
-                        {format(new Date(schedule.startTime), "dd/MM/yyyy")}
-                      </div>
-                      <div className="text-xs font-bold text-blue-700 mt-0.5 flex items-center gap-1">
-                        <Clock className="w-3 h-3" />
-                        {format(new Date(schedule.startTime), "HH:mm")} - {format(new Date(schedule.endTime), "HH:mm")}
+                        <div className="text-[11px] font-semibold text-blue-600/80 mt-0.5">
+                          {format(new Date(schedule.startTime), "dd/MM/yyyy")}
+                        </div>
+                        <div className="text-xs font-bold text-blue-700 mt-0.5 flex items-center gap-1">
+                          <Clock className="w-3 h-3" />
+                          {format(new Date(schedule.startTime), "HH:mm")} - {format(new Date(schedule.endTime), "HH:mm")}
+                        </div>
                       </div>
                     </div>
                   </div>
-                </div>
-              ))
-            )}
+                ))
+              )}
+            </div>
           </div>
-        </div>
+        )}
       </div>
 
       {/* MODAL XÁC NHẬN CÔNG BỐ LỊCH */}

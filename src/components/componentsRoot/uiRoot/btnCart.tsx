@@ -6,15 +6,16 @@ import { useDispatch, useSelector } from 'react-redux';
 import { AppDispatch, RootState } from '@/lib/store';
 import { getCartAPI } from '@/lib/features/cartSlice';
 
-
-
 const CartDrawer = () => {
     const [open, setOpen] = useState(false);
     const dispatch = useDispatch<AppDispatch>();
     const { items: cartItems } = useSelector((state: RootState) => state.cart);
 
+    // 👇 1. SỬA LỖI TÍNH TỔNG TIỀN (Thêm ?. và || 0)
     const subTotal = cartItems.reduce((acc, item) => {
-        return acc + (Number(item.product.price) * item.quantity);
+        const price = Number(item?.product?.price) || 0;
+        const qty = item?.quantity || 0;
+        return acc + (price * qty);
     }, 0);
 
     const handleRemoveItem = (id: number) => {
@@ -22,8 +23,8 @@ const CartDrawer = () => {
     };
 
     useEffect(() => {
-    dispatch(getCartAPI()); 
-}, [dispatch]);
+        dispatch(getCartAPI()); 
+    }, [dispatch]);
 
     return (
         <ConfigProvider
@@ -41,7 +42,6 @@ const CartDrawer = () => {
                         className="bg-[#C19D56] text-white p-3 rounded-l-lg shadow-[0_4px_14px_rgba(0,0,0,0.3)]
                                    hover:bg-[#a38446] transition-all duration-300 group flex flex-col items-center gap-1"
                     >
-                        {/* Icon Giỏ hàng (Shopping Bag) */}
                         <MdAddShoppingCart />
                         <span className="text-[10px] font-bold uppercase hidden sm:block writing-mode-vertical">
                             Cart
@@ -61,14 +61,13 @@ const CartDrawer = () => {
                 placement="right"
                 onClose={() => setOpen(false)}
                 open={open}
-                width={380} // Rộng hơn chút để hiển thị sản phẩm đẹp hơn
+                width={380} 
                 className="font-[DM_Sans]"
-                // Footer chứa nút Checkout
                 footer={
                     <div className="flex flex-col gap-4 p-2">
                         <div className="flex justify-between text-lg font-bold text-[#111111]">
                             <span>Subtotal:</span>
-                            <span className="text-[#C19D56]">{subTotal.toLocaleString()} đ</span>
+                            <span className="text-[#C19D56]">{subTotal.toLocaleString('vi-VN')} đ</span>
                         </div>
                         <Button
                             type="primary"
@@ -95,8 +94,9 @@ const CartDrawer = () => {
                                 {/* Ảnh nhỏ */}
                                 <div className="w-20 h-20 bg-gray-100 rounded-md overflow-hidden flex-shrink-0">
                                     <img
-                                        src={item.product.thumbnail}
-                                        alt={item.product.name}
+                                        // 👇 2. BẢO VỆ ẢNH: Nếu không có ảnh thì lấy ảnh mặc định
+                                        src={item?.product?.thumbnail || '/images/placeholder.png'}
+                                        alt={item?.product?.name || 'Sản phẩm'}
                                         className="w-full h-full object-cover"
                                     />
                                 </div>
@@ -104,12 +104,17 @@ const CartDrawer = () => {
                                 {/* Thông tin */}
                                 <div className="flex-1 flex flex-col justify-between h-20">
                                     <div>
-                                        <h4 className="text-[#111111] font-bold line-clamp-1">{item.product.name}</h4>
-                                        <p className="text-[#C19D56] font-medium">{Number(item.product.price).toLocaleString('vi-VN')} đ</p>
+                                        {/* 👇 3. BẢO VỆ TÊN & GIÁ TIỀN */}
+                                        <h4 className="text-[#111111] font-bold line-clamp-1">
+                                            {item?.product?.name || 'Sản phẩm không xác định'}
+                                        </h4>
+                                        <p className="text-[#C19D56] font-medium">
+                                            {Number(item?.product?.price || 0).toLocaleString('vi-VN')} đ
+                                        </p>
                                     </div>
 
                                     <div className="flex justify-between items-center">
-                                        <span className="text-sm text-gray-500">Qty: {item.quantity}</span>
+                                        <span className="text-sm text-gray-500">Qty: {item?.quantity || 0}</span>
                                         <button
                                             onClick={() => handleRemoveItem(item.id)}
                                             className="text-gray-400 hover:text-red-500 text-xs underline transition"

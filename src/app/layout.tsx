@@ -32,9 +32,6 @@ export default function RootLayout({
     <html lang="en">
       <body className={`${dmSans.variable} ${marcellus.variable} flex flex-col min-h-screen`}>
         <Providers>
-          {/* Ở đây KHÔNG CÒN Header hay Footer nữa.
-              Nó chỉ render children (có thể là layout con của user hoặc layout con của admin)
-            */}
           {children}
           <Toaster position="top-right" richColors />
         </Providers>

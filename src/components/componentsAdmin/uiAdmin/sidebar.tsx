@@ -13,10 +13,10 @@ import {
 
 // Menu items.
 const items = [
-  { title: "Home", url: "#", icon: Home },
+  { title: "Home", url: "/admin", icon: Home },
   { title: "Users", url: "/admin/users", icon: Users },
-  { title: "Items", url: "#", icon: Layers },
-  { title: "Inbox", url: "#", icon: Inbox },
+  { title: "Pay Roll", url: "/admin/payroll-approval", icon: Layers }, 
+  { title: "Duyệt Lương", url: "/admin/payroll", icon: Inbox },
   { title: "Calendar", url: "/admin/schedules", icon: Calendar },
   { title: "Settings", url: "#", icon: Settings },
 ]

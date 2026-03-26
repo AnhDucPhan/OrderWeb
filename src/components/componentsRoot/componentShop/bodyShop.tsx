@@ -1,7 +1,9 @@
 'use client'
 import { addToCartAPI } from '@/lib/features/cartSlice';
+import { openLoginModal } from '@/lib/features/ui/uiSlice';
 import { AppDispatch } from '@/lib/store';
 import { Slider, Switch, ConfigProvider, message } from 'antd';
+import { useSession } from 'next-auth/react';
 import Link from 'next/link';
 import { useEffect, useState } from "react";
 import { useDispatch } from 'react-redux';
@@ -28,6 +30,8 @@ const BodyShop = () => {
     const [sort, setSort] = useState('-createdAt')
     const [loading, setLoading] = useState(true);
     const [sortBy, setSortBy] = useState('createdAt');
+    const { data: session } = useSession();
+
 
     const fetchProducts = async (page = 1, currentSort = sortBy) => { // Nhận thêm tham số currentSort
         try {
@@ -80,6 +84,11 @@ const BodyShop = () => {
     };
 
     const handleAddToCart = (product: Product) => {
+        if (!session) {
+            message.warning('Vui lòng đăng nhập để thêm sản phẩm vào giỏ hàng!');
+            dispatch(openLoginModal()); 
+            return;
+        }
 
         dispatch(addToCartAPI({
             productId: product.id,
@@ -251,8 +260,7 @@ const BodyShop = () => {
                                 <form className="w-full sm:w-auto">
                                     <select
                                         className="w-full sm:w-auto text-sm border border-gray-200 rounded px-3 py-2 outline-none bg-white cursor-pointer hover:border-[#C19D56] focus:border-[#C19D56] transition-colors"
-                                        defaultValue="createdAt"
-                                        value={sortBy}
+                                        value={sortBy} // Chỉ giữ lại dòng này
                                         onChange={handleSortChange}
                                     >
                                         <option value="createdAt">Default sorting</option>
