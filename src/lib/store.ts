@@ -7,6 +7,8 @@ import { notificationApi } from '@/services/notificationApi';
 import { attendanceApi } from '@/services/attendanceApi';
 import { payrollApi } from '@/services/payrollApi';
 import { salaryApi } from '@/services/salaryApi';
+import { materialApi } from '@/services/materialApi';
+import { categoryApi } from '@/services/categoryApi';
 
 
 // Tạo store
@@ -21,7 +23,8 @@ export const makeStore = () => {
       [attendanceApi.reducerPath]: attendanceApi.reducer,
       [payrollApi.reducerPath]: payrollApi.reducer,
       [salaryApi.reducerPath]: salaryApi.reducer,
-
+      [materialApi.reducerPath]: materialApi.reducer,
+      [categoryApi.reducerPath]: categoryApi.reducer,
     },
     middleware: (getDefaultMiddleware) =>
       getDefaultMiddleware()
@@ -30,7 +33,9 @@ export const makeStore = () => {
         .concat(notificationApi.middleware)
         .concat(attendanceApi.middleware)
         .concat(payrollApi.middleware)
-        .concat(salaryApi.middleware),
+        .concat(salaryApi.middleware)
+        .concat(materialApi.middleware)
+        .concat(categoryApi.middleware)
   });
 };
 

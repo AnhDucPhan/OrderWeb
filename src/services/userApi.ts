@@ -11,7 +11,7 @@ export interface User {
   avatar?: string;
   createdAt: string;
   status: string;
-  position: string; 
+  position: string;
 }
 
 export const userApi = createApi({
@@ -19,13 +19,13 @@ export const userApi = createApi({
 
   baseQuery: fetchBaseQuery({
     baseUrl: 'http://localhost:8386',
-    prepareHeaders:  async (headers) => {
+    prepareHeaders: async (headers) => {
       const session: any = await getSession();
-      const token = session?.accessToken; 
+      const token = session?.accessToken;
       console.log("TEST SESSION:", session);
       if (token) {
-        headers.set('Authorization', `Bearer ${token}`); 
-      
+        headers.set('Authorization', `Bearer ${token}`);
+
       }
       return headers
     },
@@ -35,16 +35,25 @@ export const userApi = createApi({
 
   endpoints: (builder) => ({
 
-    // A. Lấy danh sách (Query)
-    getUsers: builder.query<User[], void>({
-      query: () => '/users',
-      // 👇 Dán nhãn "Users" vào dữ liệu trả về
+    // Thêm role và status vào type định nghĩa
+    getUsers: builder.query<{ data: User[]; meta: any }, { page: number; perPage: number; q?: string; role?: string; status?: string }>({
+      query: ({ page, perPage, q, role, status }) => {
+        // 1. Kiểm tra xem có gõ tìm kiếm không để quyết định gọi endpoint nào
+        let url = q
+          ? `/users/search?page=${page}&perPage=${perPage}&q=${encodeURIComponent(q)}`
+          : `/users?page=${page}&perPage=${perPage}`;
+
+        // 2. Nối thêm bộ lọc nếu có
+        if (role && role !== 'all') url += `&role=${encodeURIComponent(role)}`;
+        if (status && status !== 'all') url += `&status=${encodeURIComponent(status)}`;
+
+        return url;
+      },
       providesTags: (result) =>
-        result
-          ? [...result.map(({ id }) => ({ type: 'Users' as const, id })), 'Users']
+        result?.data
+          ? [...result.data.map(({ id }) => ({ type: 'Users' as const, id })), 'Users']
           : ['Users'],
     }),
-
     // B. Thêm mới (Mutation)
     createUser: builder.mutation<User, FormData>({
       query: (formData) => ({

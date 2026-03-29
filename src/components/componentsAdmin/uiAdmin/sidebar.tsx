@@ -13,12 +13,12 @@ import {
 
 // Menu items.
 const items = [
-  { title: "Home", url: "/admin", icon: Home },
-  { title: "Users", url: "/admin/users", icon: Users },
-  { title: "Pay Roll", url: "/admin/payroll-approval", icon: Layers }, 
+  { title: "Dashboard", url: "/admin", icon: Home },
+  { title: "Nhân Sự", url: "/admin/users", icon: Users },
+  { title: "Duyệt Công", url: "/admin/payroll-approval", icon: Layers },
   { title: "Duyệt Lương", url: "/admin/payroll", icon: Inbox },
-  { title: "Calendar", url: "/admin/schedules", icon: Calendar },
-  { title: "Settings", url: "#", icon: Settings },
+  { title: "Duyệt lịch", url: "/admin/schedules", icon: Calendar },
+  { title: "Sản Phẩm", url: "/admin/products", icon: Settings },
 ]
 
 export function AppSidebar() {
