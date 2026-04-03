@@ -1,7 +1,6 @@
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
 import { getSession } from 'next-auth/react';
 
-// Kiểu dữ liệu cho 1 món trong giỏ
 export interface CartItem {
   id: number;
   quantity: number;
@@ -29,7 +28,6 @@ export const addToCartAPI = createAsyncThunk(
   async (payload: { productId: number, quantity: number }, { rejectWithValue }) => {
     try {
       const session = await getSession();
-      console.log("Session Token:", session?.accessToken);
       const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/cart/add`, {
         method: 'POST',
         headers: {
@@ -38,14 +36,15 @@ export const addToCartAPI = createAsyncThunk(
         },
         body: JSON.stringify(payload)
       });
-      const data = await res.json();
-      return data; // Trả về cartItem vừa thêm/update
+      if (!res.ok) throw new Error('Lỗi từ server');
+      return await res.json();
     } catch (error) {
       return rejectWithValue('Lỗi thêm giỏ hàng');
     }
   }
 );
 
+// 2. Thunk gọi API Lấy Giỏ Hàng
 export const getCartAPI = createAsyncThunk(
   'cart/getCartAPI',
   async (_, { rejectWithValue }) => {
@@ -53,16 +52,15 @@ export const getCartAPI = createAsyncThunk(
       const session = await getSession();
       const token = session?.accessToken;
       if (!token) return { items: [] };
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/cart`,
-        {
-          method: 'GET',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}` // 👇 Gửi Token đi
-          },
-        }
-      );
-      if (!res.ok) throw new Error('Lỗi lấy giỏ hàng');
+
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/cart`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+      });
+      if (!res.ok) throw new Error('Lỗi từ server');
       return await res.json();
     } catch (error) {
       return rejectWithValue('Lỗi lấy giỏ hàng');
@@ -70,23 +68,19 @@ export const getCartAPI = createAsyncThunk(
   }
 );
 
+// 3. Thunk gọi API Xóa Sản Phẩm
 export const removeCartItemAPI = createAsyncThunk(
   'cart/removeCartItemAPI',
   async (itemId: number, { rejectWithValue }) => {
     try {
       const session = await getSession();
-      const token = session?.accessToken;
-
       const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/cart/item/${itemId}`, {
-        method: 'DELETE', // Method DELETE
+        method: 'DELETE',
         headers: {
-          'Authorization': `Bearer ${token}`
+          'Authorization': `Bearer ${session?.accessToken}`
         },
       });
-
-      if (!res.ok) throw new Error('Lỗi xóa sản phẩm');
-
-      // Trả về ID đã xóa để Redux cập nhật state
+      if (!res.ok) throw new Error('Lỗi từ server');
       return itemId;
     } catch (error) {
       return rejectWithValue('Lỗi xóa sản phẩm');
@@ -98,39 +92,62 @@ const cartSlice = createSlice({
   name: 'cart',
   initialState,
   reducers: {
-    // Các action đồng bộ nếu cần (ví dụ xóa cart local)
+    // Lưu ý: Hàm này hiện tại chỉ update giao diện tạm thời. 
+    // Nên kết hợp gọi API debounce ở component để lưu xuống DB.
+    updateQuantity: (state, action: PayloadAction<{ id: number; quantity: number }>) => {
+      const { id, quantity } = action.payload;
+      const item = state.items.find(item => item.id === id);
+      if (item) {
+        item.quantity = quantity;
+      }
+    },
   },
   extraReducers: (builder) => {
-    builder.addCase(addToCartAPI.fulfilled, (state, action) => {
-      // Logic cập nhật state:
-      // Cách đơn giản nhất: Tìm item trong list, nếu có thì update, chưa có thì push
-      const newItem = action.payload;
-      const existingItemIndex = state.items.findIndex(i => i.product.id === newItem.product.id);
+    // --- XỬ LÝ GET CART ---
+    builder.addCase(getCartAPI.pending, (state) => {
+      state.loading = true;
+    });
+    builder.addCase(getCartAPI.fulfilled, (state, action) => {
+      state.loading = false;
+      state.items = action.payload?.items || [];
+    });
+    builder.addCase(getCartAPI.rejected, (state) => {
+      state.loading = false;
+      state.items = []; // Có thể văng lỗi thì cho rỗng luôn
+    });
 
-      if (existingItemIndex >= 0) {
-        state.items[existingItemIndex].quantity = newItem.quantity;
+    // --- XỬ LÝ ADD TO CART ---
+    builder.addCase(addToCartAPI.pending, (state) => {
+      state.loading = true;
+    });
+    builder.addCase(addToCartAPI.fulfilled, (state, action) => {
+      state.loading = false;
+      const newItem = action.payload;
+      const existingItem = state.items.find(i => i.product.id === newItem.product.id);
+
+      if (existingItem) {
+        existingItem.quantity = newItem.quantity;
       } else {
         state.items.push(newItem);
       }
     });
-    builder.addCase(getCartAPI.fulfilled, (state, action) => {
-      // action.payload là object Cart từ DB, ta lấy mảng items bên trong
-      if (action.payload && action.payload.items) {
-        state.items = action.payload.items;
-      } else {
-        state.items = [];
-      }
+    builder.addCase(addToCartAPI.rejected, (state) => {
+      state.loading = false;
+    });
+
+    // --- XỬ LÝ REMOVE ITEM ---
+    builder.addCase(removeCartItemAPI.pending, (state) => {
+      state.loading = true;
     });
     builder.addCase(removeCartItemAPI.fulfilled, (state, action) => {
-      // Lọc bỏ item có ID vừa xóa khỏi mảng items
+      state.loading = false;
       state.items = state.items.filter((item) => item.id !== action.payload);
-      // (Optional) Thông báo thành công nếu cần thiết
+    });
+    builder.addCase(removeCartItemAPI.rejected, (state) => {
+      state.loading = false;
     });
   },
 });
 
-
-
-
-
+export const { updateQuantity } = cartSlice.actions;
 export default cartSlice.reducer;

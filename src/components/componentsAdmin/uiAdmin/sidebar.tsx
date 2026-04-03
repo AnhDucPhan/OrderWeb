@@ -18,7 +18,7 @@ const items = [
   { title: "Duyệt Công", url: "/admin/payroll-approval", icon: Layers },
   { title: "Duyệt Lương", url: "/admin/payroll", icon: Inbox },
   { title: "Duyệt lịch", url: "/admin/schedules", icon: Calendar },
-  { title: "Sản Phẩm", url: "/admin/products", icon: Settings },
+  { title: "Nguyên vật liệu", url: "/admin/products", icon: Settings },
 ]
 
 export function AppSidebar() {

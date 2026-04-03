@@ -6,7 +6,8 @@ import { ConfigProvider, InputNumber, Button, Divider, Input, Modal, message } f
 import { DeleteOutlined, ArrowLeftOutlined, ShoppingCartOutlined } from '@ant-design/icons';
 import { useSelector, useDispatch } from 'react-redux';
 import { AppDispatch, RootState } from '@/lib/store';
-import { removeCartItemAPI } from '@/lib/features/cartSlice';
+import { removeCartItemAPI, updateQuantity } from '@/lib/features/cartSlice';
+// 👇 Nhớ import thêm action cập nhật số lượng (giả sử tên là updateQuantity) từ cartSlice
 
 const CartComponent = () => {
     const dispatch = useDispatch<AppDispatch>();
@@ -16,7 +17,7 @@ const CartComponent = () => {
     // Lấy data từ Redux
     const { items: cartItems } = useSelector((state: RootState) => state.cart);
 
-    // Tính tổng tiền an toàn
+    // Tính tổng tiền an toàn (Sẽ tự động chạy lại khi cartItems thay đổi)
     const subTotal = cartItems.reduce((total, item) => {
         const price = Number(item?.product?.price) || 0;
         const qty = item?.quantity || 0;
@@ -25,10 +26,12 @@ const CartComponent = () => {
 
     const total = subTotal; 
 
-    // Xử lý thay đổi số lượng
+    // 👇 Xử lý thay đổi số lượng
     const handleQuantityChange = (id: number, value: number | null) => {
-        console.log('Update quantity:', id, value);
-        // dispatch(updateQuantity({ id, quantity: value }));
+        if (value !== null && value > 0) {
+            // Cập nhật số lượng lên Redux store
+            dispatch(updateQuantity({ id, quantity: value }));
+        }
     };
 
     const handleRemoveItem = (itemId: number) => {
@@ -166,10 +169,11 @@ const CartComponent = () => {
                                         <div className="col-span-2 flex justify-between sm:justify-center items-center w-full sm:w-auto mt-4 sm:mt-0 border-t sm:border-0 pt-4 sm:pt-0 border-gray-100">
                                             <span className="sm:hidden text-gray-500 font-medium">Số lượng:</span>
                                             <div className="custom-input-number">
+                                                {/* 👇 Sửa defaultValue thành value 👇 */}
                                                 <InputNumber
                                                     min={1}
                                                     max={99}
-                                                    defaultValue={item?.quantity || 1}
+                                                    value={item?.quantity || 1} 
                                                     onChange={(val) => handleQuantityChange(item.id, val)}
                                                     className="w-16"
                                                 />

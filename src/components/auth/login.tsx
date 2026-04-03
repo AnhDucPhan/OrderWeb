@@ -4,37 +4,35 @@ import Image from "next/image";
 import { FaRegEye } from "react-icons/fa";
 import { IoIosEyeOff } from "react-icons/io";
 import { FaArrowLeftLong } from "react-icons/fa6";
-import { useState, Dispatch, SetStateAction } from "react"; // Import thêm Dispatch, SetStateAction
+// 👇 1. Import thêm icon Google
+import { FcGoogle } from "react-icons/fc"; 
+import { useState, Dispatch, SetStateAction } from "react";
 import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
 
 interface LoginProps {
     openFormLogin: boolean;
     setOpenFormLogin: Dispatch<SetStateAction<boolean>>;
-    onSwitchToRegister: () => void; // 👈 Thêm dòng này
+    onSwitchToRegister: () => void;
 }
 
-// 2. Nhận props vào hàm
 const Login = ({ openFormLogin, setOpenFormLogin, onSwitchToRegister }: LoginProps) => {
 
-    // State nội bộ để xử lý form
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [showPassword, setShowPassword] = useState(false);
 
-    // State xử lý loading và lỗi
     const [isLoading, setIsLoading] = useState(false);
     const [errorMsg, setErrorMsg] = useState('');
 
     const router = useRouter();
 
     const handleLogin = async (e: React.FormEvent) => {
-        e.preventDefault(); // Chặn reload trang
+        e.preventDefault();
         setIsLoading(true);
         setErrorMsg('');
 
         try {
-            // Gọi NextAuth
             const res = await signIn('credentials', {
                 email: email,
                 password: password,
@@ -45,8 +43,7 @@ const Login = ({ openFormLogin, setOpenFormLogin, onSwitchToRegister }: LoginPro
             if (res?.error) {
                 setErrorMsg("Email hoặc mật khẩu không chính xác!");
             } else {
-                // Thành công:
-                setOpenFormLogin(false); // Đóng form bằng hàm từ Cha gửi xuống
+                setOpenFormLogin(false);
                 router.refresh();
             }
         } catch (error) {
@@ -58,7 +55,7 @@ const Login = ({ openFormLogin, setOpenFormLogin, onSwitchToRegister }: LoginPro
 
     return (
         <>
-            {/* Lớp phủ mờ (Overlay) - Bấm ra ngoài thì đóng */}
+            {/* Lớp phủ mờ (Overlay) */}
             {openFormLogin && (
                 <div
                     className="fixed inset-0 bg-black/50 z-40 transition-opacity"
@@ -68,11 +65,11 @@ const Login = ({ openFormLogin, setOpenFormLogin, onSwitchToRegister }: LoginPro
 
             <div
                 className={`fixed top-0 right-0 h-full w-[90%] max-w-[500px] bg-white z-50 p-12 shadow-2xl
-                transition-transform duration-300 ease-out
+                transition-transform duration-300 ease-out overflow-y-auto
                 ${openFormLogin ? "translate-x-0" : "translate-x-full"}
                 `}
             >
-                <div className="flex flex-col h-full text-black">
+                <div className="flex flex-col min-h-full text-black">
                     {/* Header: Nút đóng */}
                     <div className="flex items-center justify-between mb-8">
                         <div className="relative aspect-[487/120] w-[140px] sm:w-[170px]">
@@ -145,18 +142,37 @@ const Login = ({ openFormLogin, setOpenFormLogin, onSwitchToRegister }: LoginPro
                             >
                                 {isLoading ? "Processing..." : "Sign In"}
                             </button>
-
-                            {/* Footer Link */}
-                            <p className="text-center text-sm text-gray-600">
-                                Don’t have an account?
-                                <span
-                                    className="text-[#C19D56] cursor-pointer hover:underline font-medium"
-                                    onClick={onSwitchToRegister} // 👈 Gắn sự kiện click vào đây
-                                >
-                                    Sign Up
-                                </span>
-                            </p>
                         </form>
+
+                        {/* 👇 2. KHU VỰC THÊM MỚI: Dòng kẻ chữ OR và Nút Google */}
+                        <div className="my-6 flex items-center justify-between">
+                            <span className="w-1/5 border-b border-gray-300 lg:w-1/4"></span>
+                            <span className="text-xs text-center text-gray-500 uppercase font-medium">
+                                Or login with
+                            </span>
+                            <span className="w-1/5 border-b border-gray-300 lg:w-1/4"></span>
+                        </div>
+
+                        <button
+                            type="button" // Bắt buộc là type="button" để không submit form
+                            onClick={() => signIn('google', { callbackUrl: '/' })}
+                            className="w-full flex items-center justify-center gap-3 rounded-lg border border-gray-300 bg-white py-3 font-semibold text-gray-700 hover:bg-gray-50 transition-colors shadow-sm mb-6"
+                        >
+                            <FcGoogle size={24} />
+                            Sign In with Google
+                        </button>
+                        {/* 👆 KẾT THÚC KHU VỰC THÊM MỚI */}
+
+                        {/* Footer Link */}
+                        <p className="text-center text-sm text-gray-600 mt-auto pt-4">
+                            Don’t have an account?{' '}
+                            <span
+                                className="text-[#C19D56] cursor-pointer hover:underline font-medium ml-1"
+                                onClick={onSwitchToRegister}
+                            >
+                                Sign Up
+                            </span>
+                        </p>
                     </div>
                 </div>
             </div>

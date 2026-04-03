@@ -22,6 +22,8 @@ interface Meta {
     perPage: number;
 }
 
+const categories = ['Cà Phê ', 'Trà Trái Cây', 'Đá Xay', 'Đồ Nóng ', 'Toping'];
+
 const BodyShop = () => {
     const dispatch = useDispatch<AppDispatch>();
     const [products, setProducts] = useState<Product[]>([]);
@@ -147,7 +149,7 @@ const BodyShop = () => {
                         <div className="w-full lg:w-1/4 flex-shrink-0 space-y-6 lg:sticky lg:top-4">
 
                             {/* Filter by Price */}
-                            <div className="border border-gray-200 rounded-2xl p-5 bg-white shadow-sm">
+                            {/* <div className="border border-gray-200 rounded-2xl p-5 bg-white shadow-sm">
                                 <h3 className="relative pl-5 text-[#111111] font-[Marcellus] text-xl sm:text-2xl mb-4
                             before:content-[''] before:absolute before:top-1/2 before:left-0 before:-translate-y-1/2
                             before:w-[8px] before:h-[8px] before:rounded-full before:bg-[#C19D56]">
@@ -180,7 +182,7 @@ const BodyShop = () => {
                                         <label className="text-xs text-gray-400 font-[DM_Sans]">Max</label>
                                     </div>
                                 </div>
-                            </div>
+                            </div> */}
 
                             {/* Categories */}
                             <div className="border border-gray-200 rounded-2xl p-5 bg-white shadow-sm">
@@ -190,7 +192,7 @@ const BodyShop = () => {
                                     Categories
                                 </h3>
                                 <ul className="space-y-1">
-                                    {['Uncategorized', 'Accessories', 'Clothing', 'Hoodies', 'Music', 'Tshirts'].map((item) => (
+                                    {['Coffee', 'Non-Coffee', 'Clothing', 'Hoodies', 'Music', 'Tshirts'].map((item) => (
                                         <li key={item} className="py-1">
                                             <span className="text-sm sm:text-base text-[#555] font-[DM_Sans] hover:text-[#C19D56] transition-colors cursor-pointer block">
                                                 {item}
