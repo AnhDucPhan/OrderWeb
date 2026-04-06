@@ -9,62 +9,76 @@ const ListExpert = () => {
         { img: "/images/Olivia.jpg", title: "Olivia", subtitle: "Manager" },
         { img: "/images/Sophie.jpg", title: "Sophie", subtitle: "Agent" },
         { img: "/images/Liam.jpg", title: "Liam", subtitle: "Manager" },
-        // thêm item khác
     ];
+
     return (
-        <section className="">
-            <div className="bg-[#1d0e04]  w-full py-12 px-6 sm:px-10 lg:px-20  ">
-                {/* Text trên cùng */}
-                <div className="flex justify-between items-center">
-                    <div className="text-center md:text-left max-w-4xl mx-auto md:mx-0 mb-12">
-                        <span className="inline-flex gap-2 items-center font-dm-sans text-[#c19d56] mb-[14px] text-base font-normal uppercase leading-[1.4] tracking-[2px]">
-                            <GiCoffeeCup />
+        // Thêm overflow-hidden ở ngoài cùng để chống tràn thanh cuộn ngang
+        <section className="bg-[#1d0e04] w-full py-16 lg:py-24 overflow-hidden">
+            {/* Dùng max-w-7xl để khóa độ rộng trên màn hình iMac/PC lớn */}
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                
+                {/* ================= BÊN TRÊN: TEXT & BUTTON ================= */}
+                {/* Đổi sang flex-col ở mobile và flex-row ở desktop */}
+                <div className="flex flex-col md:flex-row justify-between items-center md:items-end gap-8 md:gap-12">
+                    
+                    {/* Text Section */}
+                    <div className="text-center md:text-left max-w-2xl">
+                        <span className="inline-flex items-center justify-center md:justify-start gap-2 font-dm-sans text-[#c19d56] mb-4 text-sm sm:text-base font-bold uppercase tracking-widest">
+                            <GiCoffeeCup className="text-xl" />
                             Our Team Experts
                         </span>
-                        <h2 className="text-white font-[Marcellus] font-normal text-[52px] leading-[62px] tracking-[-1px]">
-                            Meet the Our Experts Behind Your Financial Growth
+                        
+                        {/* Typography chia bậc cho Mobile -> Tablet -> Desktop */}
+                        <h2 className="text-white font-marcellus text-3xl sm:text-4xl md:text-5xl lg:text-[52px] leading-tight lg:leading-[62px] tracking-tight">
+                            Meet Our Experts <br className="hidden lg:block" /> Behind Your Financial Growth
                         </h2>
                     </div>
-                    <button className="w-fit border border-transparent rounded-lg bg-[#C19D56] px-6 py-4 hover:bg-[#86624A] hover:border-[#C19D56] transition-colors duration-300">
-                        <span className="flex items-center gap-4 text-white">
+                    
+                    {/* Button Section */}
+                    <button className="w-full sm:w-auto flex-shrink-0 border border-transparent rounded-lg bg-[#C19D56] px-8 py-3.5 hover:bg-[#86624A] transition-all duration-300 shadow-md hover:-translate-y-1 group">
+                        <span className="flex items-center justify-center gap-3 text-white font-semibold tracking-wide">
                             VIEW MORE
-                            <BsArrowReturnRight />
+                            <BsArrowReturnRight className="transition-transform group-hover:translate-x-1" />
                         </span>
                     </button>
                 </div>
 
-                <div className="w-full h-[1px] bg-white opacity-20 my-10"></div>
+                <div className="w-full h-[1px] bg-white opacity-20 my-10 lg:my-14"></div>
 
-
-                {/* List scroll tự động */}
-                <div className="overflow-hidden relative w-full">
-                    <div className="flex animate-scroll-step gap-4">
+                {/* ================= BÊN DƯỚI: SCROLL LIST ================= */}
+                <div className="relative w-full">
+                    {/* Lưu ý: Đảm bảo bạn đã setup 'animate-scroll-step' trong tailwind.config.js nhé */}
+                    <div className="flex animate-scroll-step gap-4 sm:gap-6">
                         {items.concat(items).map((item, index) => (
                             <div
                                 key={index}
-                                className="flex-shrink-0 flex flex-col items-center text-center"
-                                style={{ width: '28.57%' }} // 3.5 item vừa màn hình
+                                /* 👇 TUYỆT CHIÊU ĐÂY: Dùng width theo % tùy breakpoint thay vì Inline Style */
+                                className="flex-shrink-0 flex flex-col items-center text-center 
+                                           w-[75%] sm:w-[45%] md:w-[30%] lg:w-[28%]"
                             >
-                                <div className="w-full aspect-square">
+                                {/* Ảnh được bọc trong khung vuông (aspect-square) */}
+                                <div className="w-full aspect-square relative group overflow-hidden rounded-2xl shadow-xl bg-stone-900">
                                     <img
                                         src={item.img}
                                         alt={item.title}
-                                        className="w-full h-full object-cover rounded-2xl shadow-lg"
+                                        // Thêm hiệu ứng hover phóng to nhẹ cho từng chuyên gia
+                                        className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
                                     />
                                 </div>
-                                <span className="mt-4 text-white font-dm-sans font-semibold text-gray-900 text-lg">
+                                <span className="mt-5 text-white font-dm-sans font-semibold text-lg sm:text-xl tracking-wide">
                                     {item.title}
                                 </span>
-                                <span className="text-sm text-[#C19D56] ">{item.subtitle}</span>
+                                <span className="text-sm sm:text-base text-[#C19D56] mt-1 font-medium tracking-wider">
+                                    {item.subtitle}
+                                </span>
                             </div>
                         ))}
                     </div>
                 </div>
+
             </div>
         </section>
-
-
-    )
+    );
 }
 
-export default ListExpert
+export default ListExpert;

@@ -1,91 +1,93 @@
 import { FaCheck } from "react-icons/fa6";
 import { GiCoffeeCup } from "react-icons/gi";
 
-
 const WhyChooseUs = () => {
+    const features = [
+        "A Cleared Mind",
+        "Boost Of Energy",
+        "A Science Backed",
+        "A Cleared Mind",
+        "Boost Of Energy"
+    ];
+
     return (
-        <section className="bg-[#FCF8F4] w-full min-h-screen flex flex-col md:flex-row items-center px-6 sm:px-10 lg:px-20 py-12">
-            {/* Bên trái: Text */}
-            <div className="basis-1/2 flex flex-col justify-center text-center md:text-left px-4">
-                <span className="inline-flex gap-2 text-[#C19D56] text-sm sm:text-base md:text-lg font-medium">
-                    <GiCoffeeCup />
-                    WHY CHOOSE US
-                </span>
+        <section className="bg-[#FCF8F4] w-full min-h-screen py-16 lg:py-24 overflow-hidden">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col lg:flex-row items-center gap-16 lg:gap-12">
 
-                <h2 className="font-marcellus leading-[62px] tracking-[-1px] mt-4 text-3xl sm:text-4xl md:text-5xl lg:text-6xl text-black leading-snug">
-                    Crafting Moments, One Brew at a Time
-                </h2>
+                {/* ================= BÊN TRÁI: TEXT ================= */}
+                {/* Giữ nguyên z-10 để chữ luôn nổi lên trên, có thể đọc được nếu ảnh chạm vào */}
+                <div className="w-full lg:w-1/2 flex flex-col justify-center text-center lg:text-left relative z-10">
+                    <span className="inline-flex justify-center lg:justify-start items-center gap-2 text-[#C19D56] text-sm sm:text-base md:text-lg font-bold tracking-widest uppercase">
+                        <GiCoffeeCup className="text-xl" />
+                        WHY CHOOSE US
+                    </span>
 
-                <p className="font-dm-sans mt-4 text-base sm:text-lg md:text-xl text-gray-700 opacity-80 max-w-xl mx-auto md:mx-0">
-                    At our coffee shop, every cup tells a story. From the careful selection of premium beans
-                    to the artful brewing process, we are dedicated to creating moments of warmth, comfort, and connection.
-                </p>
+                    <h2 className="font-marcellus mt-4 text-4xl sm:text-5xl md:text-6xl text-black leading-[1.1] tracking-[-1px]">
+                        Crafting Moments, <br className="hidden lg:block" /> One Brew at a Time
+                    </h2>
 
-                {/* Features */}
-                <div className="mt-8 space-y-8">
-                    {/* Hàng 1: 3 item */}
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-                        <div className="flex flex-col items-center text-center gap-2">
-                            <div className="check text-[#C19D56] text-2xl"><FaCheck /></div>
-                            <h5 className="font-dm-sans font-semibold text-lg text-gray-900">A Cleared Mind</h5>
-                        </div>
+                    <p className="font-dm-sans mt-5 sm:mt-6 text-base sm:text-lg text-gray-700 opacity-80 max-w-2xl mx-auto lg:mx-0 leading-relaxed">
+                        At our coffee shop, every cup tells a story. From the careful selection of premium beans
+                        to the artful brewing process, we are dedicated to creating moments of warmth, comfort, and connection.
+                    </p>
 
-                        <div className="flex flex-col items-center text-center gap-2">
-                            <div className="check text-[#C19D56] text-2xl"><FaCheck /></div>
-                            <h5 className="font-dm-sans font-semibold text-lg text-gray-900">Boost Of Energy</h5>
-                        </div>
-
-                        <div className="flex flex-col items-center text-center gap-2">
-                            <div className="check text-[#C19D56] text-2xl"><FaCheck /></div>
-                            <h5 className="font-dm-sans font-semibold text-lg text-gray-900">A Science Backed</h5>
-                        </div>
-                    </div>
-
-                    {/* Hàng 2: 2 item căn giữa */}
-                    <div className="flex justify-center gap-6">
-                        <div className="flex flex-col items-center text-center gap-2">
-                            <div className="check text-[#C19D56] text-2xl"><FaCheck /></div>
-                            <h5 className="font-dm-sans font-semibold text-lg text-gray-900">A Cleared Mind</h5>
-                        </div>
-
-                        <div className="flex flex-col items-center text-center gap-2">
-                            <div className="check text-[#C19D56] text-2xl"><FaCheck /></div>
-                            <h5 className="font-dm-sans font-semibold text-lg text-gray-900">Boost Of Energy</h5>
-                        </div>
+                    <div className="mt-10 grid grid-cols-2 sm:grid-cols-3 gap-x-4 gap-y-8">
+                        {features.map((item, index) => (
+                            <div key={index} className="flex flex-col items-center lg:items-start text-center lg:text-left gap-3">
+                                <div className="w-10 h-10 rounded-full bg-white shadow-sm flex items-center justify-center text-[#C19D56] text-lg">
+                                    <FaCheck />
+                                </div>
+                                <h5 className="font-dm-sans font-semibold text-base sm:text-lg text-gray-900 leading-tight">
+                                    {item}
+                                </h5>
+                            </div>
+                        ))}
                     </div>
                 </div>
-            </div>
 
-            <div className="flex flex-col items-center space-y-6">
-                {/* Ảnh trên cùng */}
-                <img
-                    src="/images/cof.png"
-                    alt="Coffee"
-                    className="w-auto h-[150px] sm:h-[180px] md:h-[200px] lg:h-[300px] drop-shadow-xl object-contain rounded-2xl transform translate-x-40"
-                />
+                {/* ================= BÊN PHẢI: HÌNH ẢNH ================= */}
+                {/* 👇 SỬA LỖI Ở ĐÂY: XÓA `overflow-hidden`, THÊM `relative z-0` */}
+                <div className="basis-1/2 flex flex-col items-center mt-12 md:mt-0 w-full relative z-0">
 
-                {/* Hàng ngang bên dưới */}
-                <div className="flex items-center justify-center space-x-6">
-                    {/* Coffee Bean */}
+                    {/* Ảnh trên cùng (Ly cà phê) */}
                     <img
-                        src="/images/Coffee-Bean.png"
-                        alt="Coffee Bean"
-                        className="w-[130px] object-contain h-full spin-slow opacity-25"
+                        src="/images/cof.png"
+                        alt="Coffee"
+                        className="
+                        w-auto drop-shadow-xl object-contain rounded-2xl transform 
+                        h-[120px] sm:h-[180px] md:h-[200px] lg:h-[300px] 
+                        translate-x-12 sm:translate-x-24 md:translate-x-32 lg:translate-x-40 
+                        relative z-20
+                    "
                     />
 
-                    {/* Coffee Bag */}
-                    <img
-                        src="/images/coffee-bag-1.webp"
-                        alt="Coffee Bag"
-                        className="w-auto h-[260px] sm:h-[320px] md:h-[380px] lg:h-[420px] drop-shadow-xl object-contain rounded-2xl"
-                    />
+                    {/* Hàng ngang bên dưới (Hạt & Túi) */}
+                    <div className="flex items-center justify-center space-x-2 sm:space-x-6 -mt-8 sm:-mt-12 lg:-mt-20 relative z-10">
+
+                        {/* Coffee Bean */}
+                        <img
+                            src="/images/Coffee-Bean.png"
+                            alt="Coffee Bean"
+                            className="
+                            w-[70px] sm:w-[100px] lg:w-[130px] 
+                            object-contain h-full spin-slow opacity-25
+                        "
+                        />
+
+                        {/* Coffee Bag */}
+                        <img
+                            src="/images/coffee-bag-1.webp"
+                            alt="Coffee Bag"
+                            className="
+                            w-auto drop-shadow-2xl object-contain rounded-2xl
+                            h-[220px] sm:h-[320px] md:h-[380px] lg:h-[420px] 
+                        "
+                        />
+                    </div>
                 </div>
+
             </div>
-
-
-
         </section>
-
     )
 }
 

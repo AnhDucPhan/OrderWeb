@@ -29,6 +29,7 @@ import { getCartAPI } from "@/lib/features/cartSlice";
 // 👇 IMPORT HOOK GỌI API
 import { useGetProductsQuery } from "@/services/productApi";
 
+
 const Header = () => {
     const path = usePathname();
     const isSignInPage = path === '/auth/signin';
@@ -88,20 +89,22 @@ const Header = () => {
                 ? "bg-white shadow-md"
                 : "bg-black/20 "
             }`}>
-            <div className="relative aspect-[487/120] w-[40vw] max-w-[180px] sm:max-w-[220px] lg:max-w-[230px]">
-                <Image
-                    src={scrolled ? "/images/dark-logo.png" : "/images/White-logo.png"}
-                    alt="logo"
-                    fill
-                    className="object-contain"
-                />
-            </div>
+            <Link href="/">
+                <div className="relative aspect-[487/120] w-[40vw] max-w-[180px] sm:max-w-[220px] lg:max-w-[230px]">
+                    <Image
+                        src={scrolled ? "/images/dark-logo.png" : "/images/White-logo.png"}
+                        alt="logo"
+                        fill
+                        className="object-contain"
+                    />
+                </div>
+            </Link>
             <div>
                 <nav className="flex justify-center">
-                    <ul className={`grid grid-cols-5 gap-1 text-center transition-colors duration-300 
+                    <ul className={`grid grid-cols-5 gap-1 text-center transition-colors duration-300
       ${scrolled ? "text-[#0B0B24]" : "text-white"}`}>
                         <li className="header-center relative group cursor-pointer">
-                            <span className={`flex items-center gap-1 hover:text-[#C19D56] transition-colors 
+                            <span className={`flex items-center gap-1 hover:text-[#C19D56] transition-colors
           ${scrolled ? "text-[#0B0B24]" : "text-white"}`}>
                                 News
                                 <IoIosArrowDown className="transition-transform duration-300 group-hover:rotate-180" />
@@ -112,23 +115,21 @@ const Header = () => {
       group-hover:opacity-100 group-hover:translate-y-0 group-hover:visible
       transition-all duration-500 ease-out z-50">
 
-                                <div className="grid grid-cols-6 text-center gap-4">
+                                {/* 👇 MAP DỮ LIỆU API (Giữ nguyên 100% class UX của bạn) */}
+                                <div className="grid grid-cols-6 text-center gap-2">
                                     {latestProducts.map((item, idx) => (
-                                        <Link href={`/shop/${item.id}`} key={idx} className="block w-full">
-                                            <div className="flex flex-col items-center cursor-pointer group transition-transform duration-300">
-
-                                                {/* 👇 ÉP KHUNG CHỮ NHẬT DỌC VỚI aspect-[3/4] */}
+                                        <Link href={`/shop/${item.id}`} key={idx}>
+                                            <div className="flex flex-col items-center cursor-pointer group transition-transform duration-300 hover:scale-105">
                                                 <div className="w-full relative aspect-[3/4] overflow-hidden bg-gray-100 rounded-md">
                                                     <Image
                                                         src={item.thumbnail && item.thumbnail.trim() !== "" ? item.thumbnail : "/images/placeholder.png"}
                                                         alt={item.name || "Product image"}
-                                                        fill // Bắt buộc dùng fill để ảnh lấp đầy thẻ div cha
+                                                        fill
                                                         sizes="(max-width: 1200px) 16vw"
-                                                        className="object-cover transition-transform duration-300 group-hover:scale-110"
+                                                        className="object-cover transition-transform duration-500 ease-in-out group-hover/item:scale-110"
                                                     />
                                                 </div>
-
-                                                <span className="mt-3 text-black font-semibold transition-colors group-hover:text-[#C19D56] text-sm line-clamp-2 px-1">
+                                                <span className="mt-2 text-black font-semibold transition-colors group-hover:text-[#C19D56]">
                                                     {item.name}
                                                 </span>
                                             </div>
@@ -162,7 +163,7 @@ const Header = () => {
                             </div>
                         </li>
                         <li className="header-center relative group">
-                            <span className={`hover:text-[#C19D56] transition-colors 
+                            <span className={`hover:text-[#C19D56] transition-colors
           ${scrolled ? "text-[#0B0B24]" : "text-white"}`}>
                                 Portfolio
                             </span>
@@ -186,7 +187,7 @@ const Header = () => {
                             </div>
                         </li>
                         <li className="header-center relative group">
-                            <span className={`hover:text-[#C19D56] transition-colors 
+                            <span className={`hover:text-[#C19D56] transition-colors
           ${scrolled ? "text-[#0B0B24]" : "text-white"}`}>
                                 Services
                             </span>
@@ -203,7 +204,7 @@ const Header = () => {
                             </div>
                         </li>
                         <li className="header-center relative group">
-                            <span className={`hover:text-[#C19D56] transition-colors 
+                            <span className={`hover:text-[#C19D56] transition-colors
           ${scrolled ? "text-[#0B0B24]" : "text-white"}`}>
                                 Blog
                             </span>
@@ -234,7 +235,7 @@ const Header = () => {
             <div className="flex gap-6 items-center">
                 <Link href={href} >
                     <button className="border border-transparent rounded-lg bg-[#C19D56] px-[25px] py-[10px] hover:bg-[#86624A] hover:border-[#C19D56] transition-colors duration-300">
-                        <span className="flex items-center justify-center gap-4 text-white">
+                        <span className="flex items-center justify-center gap-4">
                             Book A Table
                         </span>
                     </button>
@@ -243,7 +244,7 @@ const Header = () => {
                 <div>
                     <button
                         onClick={() => setOpenModalSearch(true)}
-                        className={`text-lg sm:text-xl lg:text-2xl hover:text-[#C19D56] transition-colors 
+                        className={`text-lg sm:text-xl lg:text-2xl hover:text-[#C19D56] transition-colors
     ${scrolled ? "text-[#0B0B24]" : "text-white"}`}
                     >
                         <BsSearch />
@@ -281,8 +282,8 @@ const Header = () => {
 
                 <button
                     onClick={handleIconClick}
-                    className="rounded-full bg-[#C19D56] w-10 h-10 sm:w-14 sm:h-14 
-                flex items-center justify-center text-2xl sm:text-3xl text-white 
+                    className="rounded-full bg-[#C19D56] w-10 h-10 sm:w-14 sm:h-14
+                flex items-center justify-center text-2xl sm:text-3xl text-white
                 hover:bg-[#86624A] transition-colors duration-300"
                 >
                     <i >
