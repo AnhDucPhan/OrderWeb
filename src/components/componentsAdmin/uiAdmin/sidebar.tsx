@@ -19,6 +19,7 @@ const items = [
   { title: "Duyệt Lương", url: "/admin/payroll", icon: Inbox },
   { title: "Duyệt lịch", url: "/admin/schedules", icon: Calendar },
   { title: "Nguyên vật liệu", url: "/admin/products", icon: Settings },
+  { title: "Menu", url: "/admin/menu", icon: Settings },
 ]
 
 export function AppSidebar() {

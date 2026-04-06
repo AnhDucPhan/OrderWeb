@@ -14,9 +14,8 @@ import { useSession } from "next-auth/react";
 import Login from "../../auth/login";
 import Profile from "../../auth/profile";
 import Register from "../../auth/register";
-import { useDispatch, useSelector } from "react-redux"; // Bổ sung useSelector
-import { AppDispatch, RootState } from "@/lib/store"; // Import RootState
-// 👇 IMPORT ĐẦY ĐỦ CÁC ACTIONS TỪ UISLICE
+import { useDispatch, useSelector } from "react-redux";
+import { AppDispatch, RootState } from "@/lib/store";
 import {
     openProfile,
     openLoginModal,
@@ -27,6 +26,9 @@ import {
 } from "@/lib/features/ui/uiSlice";
 import { getCartAPI } from "@/lib/features/cartSlice";
 
+// 👇 IMPORT HOOK GỌI API
+import { useGetProductsQuery } from "@/services/productApi";
+
 const Header = () => {
     const path = usePathname();
     const isSignInPage = path === '/auth/signin';
@@ -35,22 +37,29 @@ const Header = () => {
     const [openModalSearch, setOpenModalSearch] = useState(false)
     const [scrolled, setScrolled] = useState(false);
 
-    // 👇 1. LẤY TRẠNG THÁI ĐÓNG/MỞ TỪ REDUX THAY VÌ USESTATE
     const { isLoginModalOpen, isRegisterModalOpen } = useSelector((state: RootState) => state.ui);
     const isAnyFormOpen = isLoginModalOpen || isRegisterModalOpen;
 
     const { data: session, status } = useSession();
-    const dispatch = useDispatch();
+    const dispatch = useDispatch<AppDispatch>();
 
-    // Lấy ra 1 giá trị chuỗi (string) duy nhất để làm mỏ neo
     const userEmail = session?.user?.email;
 
+    // 👇 GỌI API LẤY DATA
+    const { data: latestProductsResponse } = useGetProductsQuery({
+        page: 1,
+        items_per_page: 6,
+        orderBy: 'createdAt',
+        sort: 'desc'
+    });
+
+    const latestProducts = latestProductsResponse?.data || [];
+
     useEffect(() => {
-        // Chỉ gọi API kéo giỏ hàng khi status đã xác thực và có email
         if (status === 'authenticated' && userEmail) {
             dispatch(getCartAPI());
         }
-    }, [status, userEmail, dispatch]); // 👈 QUAN TRỌNG: Mảng này chứa biến string, không chứa object session
+    }, [status, userEmail, dispatch]);
 
     useEffect(() => {
         const handleScroll = () => {
@@ -69,37 +78,9 @@ const Header = () => {
         if (session) {
             dispatch(openProfile());
         } else {
-            // 👇 2. GỌI REDUX ĐỂ MỞ FORM LOGIN
             dispatch(openLoginModal());
         }
     };
-
-    const menuItems = [
-        {
-            image: "/images/Menu-1.jpg",
-            title: "Blended Ice Cream"
-        },
-        {
-            image: "/images/Store-2.jpg",
-            title: "Cappuccino"
-        },
-        {
-            image: "/images/store-3.jpg",
-            title: "Chocolate Coffee"
-        },
-        {
-            image: "/images/store-4.jpg",
-            title: "Blender Coffee"
-        },
-        {
-            image: "/images/store-5.jpg",
-            title: "Packaged"
-        },
-        {
-            image: "/images/Menu-1.jpg",
-            title: "Americano"
-        },
-    ];
 
     return (
         <header className={`fixed top-0 left-0 w-full h-[60px] sm:h-[80px] lg:h-[100px] flex items-center justify-between px-[30px] font-text-header font-dm z-50 transition-all duration-300
@@ -131,28 +112,32 @@ const Header = () => {
       group-hover:opacity-100 group-hover:translate-y-0 group-hover:visible
       transition-all duration-500 ease-out z-50">
 
-                                <div className="grid grid-cols-6 text-center gap-2">
-                                    {menuItems.map((item, idx) => (
-                                        <div key={idx} className="flex flex-col items-center cursor-pointer group transition-transform duration-300 hover:scale-105">
-                                            <div className="w-full relative">
-                                                <Image
-                                                    src={item.image}
-                                                    alt={item.title}
-                                                    width={300}
-                                                    height={200}
-                                                    className="object-contain rounded-none transition-transform duration-300 group-hover:scale-105"
-                                                />
+                                <div className="grid grid-cols-6 text-center gap-4">
+                                    {latestProducts.map((item, idx) => (
+                                        <Link href={`/shop/${item.id}`} key={idx} className="block w-full">
+                                            <div className="flex flex-col items-center cursor-pointer group transition-transform duration-300">
+
+                                                {/* 👇 ÉP KHUNG CHỮ NHẬT DỌC VỚI aspect-[3/4] */}
+                                                <div className="w-full relative aspect-[3/4] overflow-hidden bg-gray-100 rounded-md">
+                                                    <Image
+                                                        src={item.thumbnail && item.thumbnail.trim() !== "" ? item.thumbnail : "/images/placeholder.png"}
+                                                        alt={item.name || "Product image"}
+                                                        fill // Bắt buộc dùng fill để ảnh lấp đầy thẻ div cha
+                                                        sizes="(max-width: 1200px) 16vw"
+                                                        className="object-cover transition-transform duration-300 group-hover:scale-110"
+                                                    />
+                                                </div>
+
+                                                <span className="mt-3 text-black font-semibold transition-colors group-hover:text-[#C19D56] text-sm line-clamp-2 px-1">
+                                                    {item.name}
+                                                </span>
                                             </div>
-                                            <span className="mt-2 text-black font-semibold transition-colors group-hover:text-[#C19D56]">
-                                                {item.title}
-                                            </span>
-                                        </div>
+                                        </Link>
                                     ))}
                                 </div>
                             </div>
                         </li>
                         <li className="header-center relative group flex items-center gap-1 cursor-pointer">
-                            {/* Chữ Shop và Icon mũi tên ở ngoài cùng */}
                             <Link href='/shop'>
                                 <span className={`hover:text-[#C19D56] transition-colors ${scrolled ? "text-[#0B0B24]" : "text-white"}`}>
                                     Shop
@@ -160,14 +145,12 @@ const Header = () => {
                             </Link>
                             <IoIosArrowDown className={`${scrolled ? "text-[#0B0B24]" : "text-white"}`} />
 
-                            {/* Menu Dropdown cấp 1 chứa các mục con của Shop */}
                             <div className="absolute top-full left-1/2 -translate-x-1/4 mt-2 w-48 bg-white shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300">
                                 <ul className="flex flex-col p-4 gap-3 text-left">
                                     <Link href='/shop/cart'>
                                         <li className="color-text-header hover:text-[#C19D56] transition-colors">Cart</li>
                                     </Link>
 
-                                    {/* Mình bọc sẵn Link cho Checkout và My Account để sau này bạn dùng */}
                                     <Link href='/shop/checkout'>
                                         <li className="color-text-header hover:text-[#C19D56] transition-colors">Check Out</li>
                                     </Link>
@@ -251,7 +234,7 @@ const Header = () => {
             <div className="flex gap-6 items-center">
                 <Link href={href} >
                     <button className="border border-transparent rounded-lg bg-[#C19D56] px-[25px] py-[10px] hover:bg-[#86624A] hover:border-[#C19D56] transition-colors duration-300">
-                        <span className="flex items-center justify-center gap-4">
+                        <span className="flex items-center justify-center gap-4 text-white">
                             Book A Table
                         </span>
                     </button>
@@ -307,11 +290,9 @@ const Header = () => {
                     </i>
                 </button>
 
-                {/* 👇 3. KHỐI QUẢN LÝ 2 FORM ĐĂNG NHẬP / ĐĂNG KÝ BẰNG REDUX 👇 */}
                 <div
                     className={`fixed inset-0 z-50 ${isAnyFormOpen ? "pointer-events-auto" : "pointer-events-none"}`}
                 >
-                    {/* Overlay chung cho cả 2 form */}
                     <div
                         onClick={() => dispatch(closeAllAuthModals())}
                         className={`absolute inset-0 bg-black/40 transition-opacity duration-300
@@ -321,7 +302,6 @@ const Header = () => {
 
                     <Login
                         openFormLogin={isLoginModalOpen}
-                        // Sửa lại cách truyền hàm để tương thích với Interface cũ của component Login
                         setOpenFormLogin={(isOpen) => isOpen ? dispatch(openLoginModal()) : dispatch(closeLoginModal())}
                         onSwitchToRegister={() => dispatch(openRegisterModal())}
                     />

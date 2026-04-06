@@ -9,14 +9,20 @@ const nextConfig: NextConfig = {
         port: '',
         pathname: '/**', // Cho phép tất cả các đường dẫn con từ domain này
       },
-      // Nếu bạn có dùng các domain ảnh khác (như api.dicebear.com lúc trước), bạn cũng thêm vào đây luôn:
       {
         protocol: 'https',
         hostname: 'api.dicebear.com',
         port: '',
         pathname: '/**',
-      }
+      },
+
+      {
+        protocol: 'https',
+        hostname: 'res.cloudinary.com',
+        pathname: '/**', // Cho phép tất cả các đường dẫn từ domain này
+      },
     ],
+    
   },
 };
 
