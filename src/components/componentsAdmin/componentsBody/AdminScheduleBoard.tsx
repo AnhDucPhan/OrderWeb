@@ -112,7 +112,8 @@ export default function AdminScheduleBoard() {
     startDate: weekStart.toISOString(),
     endDate: weekEnd.toISOString()
   });
-  const { data: usersData } = useGetUsersQuery({ page: 1, perPage: 10 });
+  const { data: usersData } = useGetUsersQuery({ page: 1, perPage: 100 });
+  const usersList = usersData?.data || [];
   const [deleteSchedule] = useDeleteScheduleMutation();
   const { data: session } = useSession();
 
@@ -127,7 +128,7 @@ export default function AdminScheduleBoard() {
   // XỬ LÝ DỮ LIỆU (Chỉ chạy khi có thay đổi)
   // ==============================================
   const { processedSchedules, pendingSchedules, unpublishedApproved, futurePending } = useMemo(() => {
-    
+
     // 👇 SỬA ĐỔI: TẤT CẢ MỌI NGƯỜI ĐỀU ĐƯỢC NHÌN THẤY TOÀN BỘ LỊCH
     // Nếu bạn chỉ muốn nhân viên thấy lịch đã duyệt, hãy thêm: allSchedules.filter(s => s.status === 'APPROVED')
     const allowedSchedules = allSchedules;
@@ -145,7 +146,7 @@ export default function AdminScheduleBoard() {
     // ==========================================
     // KHỐI 2: DỮ LIỆU CHO SIDEBAR BÊN PHẢI (CÔNG BỐ)
     // ==========================================
-    const now = new Date(); 
+    const now = new Date();
 
     const readyToPublish = allowedSchedules
       .filter((s: any) =>
@@ -166,8 +167,8 @@ export default function AdminScheduleBoard() {
     return {
       processedSchedules: processed,
       pendingSchedules: pending,
-      unpublishedApproved: readyToPublish, 
-      futurePending: pendingInFuture       
+      unpublishedApproved: readyToPublish,
+      futurePending: pendingInFuture
     };
   }, [allSchedules, selectedDate]); // 👈 Bỏ isManager và currentUser ra khỏi dependency vì giờ ai cũng thấy hết
 
@@ -303,7 +304,7 @@ export default function AdminScheduleBoard() {
                             <AvatarImage src={user?.avatar} className="object-cover" />
                             <AvatarFallback className="bg-blue-100 text-blue-700 font-bold text-xs">{user?.name?.charAt(0).toUpperCase()}</AvatarFallback>
                           </Avatar>
-                          
+
                           {/* 👇 SỬA ĐỔI: CHỈ HIỂN THỊ NÚT XÓA NẾU LÀ QUẢN LÝ 👇 */}
                           {isManager && (
                             <div className="opacity-0 group-hover:opacity-100 transition-opacity bg-white/80 backdrop-blur-sm rounded-lg flex gap-1 p-0.5 shadow-sm border border-slate-100">
@@ -467,7 +468,7 @@ export default function AdminScheduleBoard() {
           setIsAddModalOpen(false);
           setEditingSchedule(null);
         }}
-        users={users}
+        users={usersList}
         editData={editingSchedule}
         isManager={isManager}
         currentUser={currentUser}
