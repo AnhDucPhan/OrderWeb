@@ -203,26 +203,9 @@ const Header = () => {
                         {/* ITEM: BÀI VIẾT */}
                         <li className="header-center relative group">
                             <span className={`flex items-center gap-1 hover:text-[#C19D56] transition-colors ${scrolled ? "text-[#0B0B24]" : "text-white"}`}>
-                                Bài Viết <IoIosArrowDown />
+                                Bài Viết 
                             </span>
-                            <div className="absolute top-full left-1/2 -translate-x-1/4 mt-2 w-64 bg-white shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300">
-                                <ul className="flex flex-col p-4 gap-2 pl-6 text-left">
-                                    <li className="color-text-header">Danh Sách Bài Viết</li>
-                                    <li className="color-text-header">Lưới Phủ Nền</li>
-                                    <li className="color-text-header relative group/shop flex items-center justify-between cursor-pointer">
-                                        <span>Dạng Lưới</span>
-                                        <IoIosArrowForward className="arrow-icon" />
-                                        <div className="absolute top-0 left-full ml-2 w-56 bg-white shadow-lg opacity-0 invisible group-hover/shop:opacity-100 group-hover/shop:visible transition-all duration-300">
-                                            <ul className="flex flex-col p-4 gap-2 text-left">
-                                                <li className="color-text-header">Kiến Thức Cà Phê</li>
-                                                <li className="color-text-header">Mẹo Pha Chế</li>
-                                                <li className="color-text-header">Sự Kiện</li>
-                                            </ul>
-                                        </div>
-                                    </li>
-                                    <li className="color-text-header">Chi Tiết Bài Viết</li>
-                                </ul>
-                            </div>
+                            
                         </li>
                     </ul>
                 </nav>
