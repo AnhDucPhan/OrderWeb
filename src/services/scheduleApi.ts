@@ -24,7 +24,7 @@ export interface ScheduleSettings {
 export const scheduleApi = createApi({
   reducerPath: 'scheduleApi',
   baseQuery: fetchBaseQuery({
-    baseUrl: 'http://localhost:8386',
+    baseUrl: process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8386',
     prepareHeaders: async (headers) => {
       const session: any = await getSession();
       const token = session?.accessToken;

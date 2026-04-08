@@ -112,7 +112,7 @@ export default function AdminScheduleBoard() {
     startDate: weekStart.toISOString(),
     endDate: weekEnd.toISOString()
   });
-  const { data: usersData } = useGetUsersQuery();
+  const { data: usersData } = useGetUsersQuery({ page: 1, perPage: 10 });
   const [deleteSchedule] = useDeleteScheduleMutation();
   const { data: session } = useSession();
 
