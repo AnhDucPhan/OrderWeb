@@ -3,8 +3,10 @@ import AboutUs from "@/components/componentsRoot/componentHomePage/aboutUsHomePa
 import WhyChooseUs from "@/components/componentsRoot/componentHomePage/whyChooseUs";
 import Rating from "@/components/componentsRoot/componentHomePage/rate";
 import ListExpert from "@/components/componentsRoot/componentHomePage/listExpert";
-
-export default function Page() {
+const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+// 1. Thêm chữ async vào trước function
+export default async function Page() {
+  await delay(2000);
   return (
     <>
       <HomePageBackGround />
@@ -14,5 +16,4 @@ export default function Page() {
       <ListExpert />
     </>
   )
-
 }

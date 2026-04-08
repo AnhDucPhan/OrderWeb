@@ -99,12 +99,12 @@ const Login = ({ openFormLogin, setOpenFormLogin, onSwitchToRegister }: LoginPro
 
                             {/* Email Input */}
                             <div className="flex flex-col gap-1">
-                                <label className="text-sm font-medium text-gray-700">Email</label>
+                                <label className="text-sm font-medium text-gray-700">Số Điện Thoại</label>
                                 <input
                                     type="email"
                                     value={email}
                                     onChange={(e) => setEmail(e.target.value)}
-                                    placeholder="example@email.com"
+                                    placeholder="0987164306"
                                     required
                                     className="w-full rounded-lg border border-gray-300 px-4 py-2.5 outline-none focus:ring-2 focus:ring-[#C19D56]"
                                 />
