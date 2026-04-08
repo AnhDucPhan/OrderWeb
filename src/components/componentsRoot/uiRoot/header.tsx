@@ -24,7 +24,7 @@ import {
 } from "@/lib/features/ui/uiSlice";
 import { getCartAPI } from "@/lib/features/cartSlice";
 
-// 👇 IMPORT HOOK GỌI API
+// IMPORT HOOK GỌI API
 import { useGetProductsQuery } from "@/services/productApi";
 
 const Header = () => {
@@ -46,7 +46,12 @@ const Header = () => {
 
     const userEmail = session?.user?.email;
 
-    // 👇 GỌI API LẤY DATA CHO MEGA MENU
+    // 👇 1. LẤY ROLE TỪ SESSION ĐỂ KIỂM TRA QUYỀN ADMIN
+    // (Dùng 'any' ép kiểu để tránh lỗi TS nếu next-auth.d.ts chưa khai báo role)
+    const userRole = (session?.user as any)?.role;
+    const isAdmin = userRole === 'MANAGER' || userRole === 'STAFF';
+
+    // GỌI API LẤY DATA CHO MEGA MENU
     const { data: latestProductsResponse } = useGetProductsQuery({
         page: 1,
         items_per_page: 6,
@@ -99,7 +104,7 @@ const Header = () => {
                 </div>
             </Link>
 
-            {/* ================= 2. DESKTOP NAVIGATION (Ẩn trên mobile) ================= */}
+            {/* ================= 2. DESKTOP NAVIGATION ================= */}
             <div className="hidden lg:block flex-1">
                 <nav aria-label="Điều hướng chính" className="flex justify-center">
                     <ul className={`grid grid-cols-5 gap-1 text-center transition-colors duration-300 ${scrolled ? "text-[#0B0B24]" : "text-white"}`}>
@@ -111,7 +116,6 @@ const Header = () => {
                                 <IoIosArrowDown className="transition-transform duration-300 group-hover:rotate-180" />
                             </span>
 
-                            {/* Animation Hover giữ nguyên của bạn */}
                             <div className="fixed top-[100px] left-1/2 -translate-x-1/2 w-[90vw] max-w-[1200px] bg-white shadow-lg p-6 rounded-lg opacity-0 translate-y-4 invisible group-hover:opacity-100 group-hover:translate-y-0 group-hover:visible transition-all duration-500 ease-out z-50">
                                 <div className="grid grid-cols-6 text-center gap-2">
                                     {latestProducts.map((item, idx) => (
@@ -227,14 +231,16 @@ const Header = () => {
             {/* ================= 3. RIGHT ACTIONS ================= */}
             <div className="flex gap-4 sm:gap-6 items-center">
                 
-                {/* Nút Đặt Bàn (Ẩn bớt trên mobile cho đỡ chật) */}
-                {/* <Link href="/book-table" className="hidden sm:block">
-                    <button className="border border-transparent rounded-lg bg-[#C19D56] px-[20px] lg:px-[25px] py-[8px] lg:py-[10px] hover:bg-[#86624A] hover:border-[#C19D56] transition-colors duration-300">
-                        <span className="flex items-center justify-center gap-4 whitespace-nowrap">
-                            Đặt Bàn
-                        </span>
-                    </button>
-                </Link> */}
+                {/* 👇 2. NÚT VÀO TRANG QUẢN TRỊ (CHỈ HIỆN VỚI ADMIN) */}
+                {isAdmin && (
+                    <Link href="/admin" className="hidden lg:block">
+                        <button className="border border-transparent rounded-lg bg-[#111111] text-white px-[15px] lg:px-[20px] py-[6px] lg:py-[8px] hover:bg-[#C19D56] transition-colors duration-300 font-semibold text-sm shadow-md">
+                            <span className="flex items-center gap-2 whitespace-nowrap">
+                                Quản Trị
+                            </span>
+                        </button>
+                    </Link>
+                )}
 
                 {/* Nút Tìm kiếm */}
                 <div>
@@ -245,7 +251,6 @@ const Header = () => {
                     >
                         <BsSearch />
                     </button>
-                    {/* Modal Tìm Kiếm (Giữ nguyên Animation animate-slide-down của bạn) */}
                     {openModalSearch && (
                         <div className="fixed inset-0 z-[100]">
                             <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setOpenModalSearch(false)} />
@@ -294,7 +299,7 @@ const Header = () => {
             </div>
 
             {/* ============================================================== */}
-            {/* MOBILE MENU OVERLAY (Tích hợp thêm hiệu ứng trượt) */}
+            {/* MOBILE MENU OVERLAY */}
             {/* ============================================================== */}
             <div className={`fixed inset-0 z-[100] lg:hidden transition-all duration-300 ${isMobileMenuOpen ? "opacity-100 visible pointer-events-auto" : "opacity-0 invisible pointer-events-none"}`}>
                 <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setIsMobileMenuOpen(false)}></div>
@@ -310,18 +315,29 @@ const Header = () => {
                             <li><Link href="/services" onClick={() => setIsMobileMenuOpen(false)}>Dịch Vụ</Link></li>
                             <li><Link href="/portfolio" onClick={() => setIsMobileMenuOpen(false)}>Bộ Sưu Tập</Link></li>
                             <li><Link href="/blog" onClick={() => setIsMobileMenuOpen(false)}>Bài Viết</Link></li>
+                            
+                            {/* Nút Đặt Bàn (Đang comment bên ngoài nhưng bạn có thể để đây) */}
                             <li className="pt-4 border-t border-gray-100">
                                 <Link href="/book-table" onClick={() => setIsMobileMenuOpen(false)} className="text-[#C19D56] font-bold">
                                     ĐẶT BÀN NGAY
                                 </Link>
                             </li>
+
+                            {/* 👇 3. NÚT VÀO TRANG QUẢN TRỊ TRÊN MOBILE (CHỈ HIỆN VỚI ADMIN) */}
+                            {isAdmin && (
+                                <li className="pt-4 border-t border-gray-100">
+                                    <Link href="/admin" onClick={() => setIsMobileMenuOpen(false)} className="text-[#111] font-bold flex items-center gap-2 hover:text-[#C19D56] transition-colors">
+                                        VÀO BẢNG ĐIỀU KHIỂN <IoIosArrowForward />
+                                    </Link>
+                                </li>
+                            )}
                         </ul>
                     </nav>
                 </div>
             </div>
 
             {/* ============================================================== */}
-            {/* AUTH MODALS (Bảo toàn 100% Cấu trúc của bạn) */}
+            {/* AUTH MODALS */}
             {/* ============================================================== */}
             <div
                 className={`fixed inset-0 z-50 ${isAnyFormOpen ? "pointer-events-auto" : "pointer-events-none"}`}
@@ -347,7 +363,7 @@ const Header = () => {
             </div>
 
             {/* ============================================================== */}
-            {/* PROFILE DRAWER (Bảo toàn 100% vị trí trong DOM) */}
+            {/* PROFILE DRAWER */}
             {/* ============================================================== */}
             <Profile />
 
