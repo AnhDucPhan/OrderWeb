@@ -2,7 +2,6 @@
 
 import Image from "next/image"
 import Link from "next/link";
-import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { BsSearch, BsArrowReturnRight } from "react-icons/bs";
 import { IoIosArrowForward, IoIosArrowDown } from "react-icons/io";
@@ -23,7 +22,7 @@ import {
     closeAllAuthModals
 } from "@/lib/features/ui/uiSlice";
 import { getCartAPI } from "@/lib/features/cartSlice";
-
+import { usePathname, useRouter } from "next/navigation";
 // IMPORT HOOK GỌI API
 import { useGetProductsQuery } from "@/services/productApi";
 
@@ -34,6 +33,8 @@ const Header = () => {
     const href = isSignInPage ? '/auth/signup' : '/auth/signin';
     const [openModalSearch, setOpenModalSearch] = useState(false);
     const [scrolled, setScrolled] = useState(false);
+
+    const router = useRouter();
 
     // State cho Mobile Menu
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -214,15 +215,15 @@ const Header = () => {
             {/* ================= 3. RIGHT ACTIONS ================= */}
             <div className="flex gap-4 sm:gap-6 items-center">
 
-                {/* 👇 2. NÚT VÀO TRANG QUẢN TRỊ (CHỈ HIỆN VỚI ADMIN) */}
                 {isAdmin && (
-                    <Link href="/admin" className="hidden lg:block">
-                        <button className="border border-transparent rounded-lg bg-[#111111] text-white px-[15px] lg:px-[20px] py-[6px] lg:py-[8px] hover:bg-[#C19D56] transition-colors duration-300 font-semibold text-sm shadow-md">
-                            <span className="flex items-center gap-2 whitespace-nowrap">
-                                Quản Trị
-                            </span>
-                        </button>
-                    </Link>
+                    <button
+                        onClick={() => router.push('/admin')} // 👈 Đẩy trang bằng code
+                        className="hidden lg:block border border-transparent rounded-lg bg-[#111111] text-white px-[15px] lg:px-[20px] py-[6px] lg:py-[8px] hover:bg-[#C19D56] transition-colors duration-300 font-semibold text-sm shadow-md"
+                    >
+                        <span className="flex items-center gap-2 whitespace-nowrap">
+                            Quản Trị
+                        </span>
+                    </button>
                 )}
 
                 {/* Nút Tìm kiếm */}
@@ -309,9 +310,15 @@ const Header = () => {
                             {/* 👇 3. NÚT VÀO TRANG QUẢN TRỊ TRÊN MOBILE (CHỈ HIỆN VỚI ADMIN) */}
                             {isAdmin && (
                                 <li className="pt-4 border-t border-gray-100">
-                                    <Link href="/admin" onClick={() => setIsMobileMenuOpen(false)} className="text-[#111] font-bold flex items-center gap-2 hover:text-[#C19D56] transition-colors">
+                                    <button
+                                        onClick={() => {
+                                            setIsMobileMenuOpen(false);
+                                            router.push('/admin'); // 👈 Đẩy trang bằng code
+                                        }}
+                                        className="text-[#111] font-bold flex items-center gap-2 hover:text-[#C19D56] transition-colors w-full text-left"
+                                    >
                                         VÀO BẢNG ĐIỀU KHIỂN <IoIosArrowForward />
-                                    </Link>
+                                    </button>
                                 </li>
                             )}
                         </ul>

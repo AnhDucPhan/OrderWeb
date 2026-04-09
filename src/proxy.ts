@@ -12,7 +12,7 @@ export default auth((req) => {
     const authRoutes = ['/login', '/register'];
     const isAuthRoute = authRoutes.includes(nextUrl.pathname);
 
-    const allowedAdminRoles = ['MANAGER', 'STAFF'];
+    const allowedAdminRoles = ['MANAGER', 'STAFF','ADMIN'];
 
     // 1. BẢO VỆ ROUTE /ADMIN
     if (isAdminRoute) {
