@@ -1,5 +1,9 @@
-import { NextResponse } from "next/server";
-import { auth } from "@/auth";
+import NextAuth from 'next-auth';
+import { authConfig } from './auth.config'; // 👈 Import config mới
+import { NextResponse } from 'next/server';
+
+// Khởi tạo auth riêng cho Middleware từ config nhẹ
+const { auth } = NextAuth(authConfig); 
 
 export default auth((req) => {
     const isLoggedIn = !!req.auth;
@@ -8,40 +12,35 @@ export default auth((req) => {
 
     const isAdminRoute = nextUrl.pathname.startsWith('/admin');
     
-    // Dùng mảng để so sánh chính xác tuyệt đối, tránh lỗi bắt nhầm route
     const authRoutes = ['/login', '/register'];
     const isAuthRoute = authRoutes.includes(nextUrl.pathname);
 
-    const allowedAdminRoles = ['MANAGER', 'STAFF','ADMIN'];
+    // 👇 ĐÃ THÊM 'ADMIN' ĐỂ ĐỒNG BỘ VỚI FRONTEND
+    const allowedAdminRoles = ['MANAGER', 'STAFF', 'ADMIN'];
 
     // 1. BẢO VỆ ROUTE /ADMIN
     if (isAdminRoute) {
-        // Chưa đăng nhập -> Đá ra trang Login (kèm theo link để login xong quay lại đây)
         if (!isLoggedIn) {
-            return NextResponse.redirect(new URL(`/login?callbackUrl=${nextUrl.pathname}`, nextUrl));
+            // Đổi về trang chủ mở popup nếu không có trang /login
+            return NextResponse.redirect(new URL(`/?showLogin=true&callbackUrl=${nextUrl.pathname}`, nextUrl));
         }
         
-        // Đã đăng nhập nhưng không đủ quyền -> Đá về trang chủ báo lỗi/hoặc trang 403
         if (!allowedAdminRoles.includes(role)) {
             return NextResponse.redirect(new URL('/', nextUrl));
         }
     }
 
-    // 2. NẾU ĐÃ LOGIN MÀ CỐ VÀO TRANG LOGIN/REGISTER
+    // 2. CHẶN VÀO LẠI LOGIN/REGISTER KHI ĐÃ LOGIN
     if (isAuthRoute && isLoggedIn) {
-        // Nếu là Admin -> Cho vào Dashboard
         if (allowedAdminRoles.includes(role)) {
             return NextResponse.redirect(new URL('/admin', nextUrl));
         }
-        // Nếu là Khách hàng -> Về trang chủ
         return NextResponse.redirect(new URL('/', nextUrl));
     }
 
-    // Cho phép đi tiếp với mọi trường hợp hợp lệ
     return NextResponse.next();
 });
 
-// Config matcher giữ nguyên (rất chuẩn rồi)
 export const config = {
     matcher: ['/((?!api|_next/static|_next/image|favicon.ico).*)'],
 };
