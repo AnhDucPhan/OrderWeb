@@ -34,7 +34,7 @@ const Header = () => {
     const href = isSignInPage ? '/auth/signup' : '/auth/signin';
     const [openModalSearch, setOpenModalSearch] = useState(false);
     const [scrolled, setScrolled] = useState(false);
-    
+
     // State cho Mobile Menu
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
@@ -49,7 +49,7 @@ const Header = () => {
     // 👇 1. LẤY ROLE TỪ SESSION ĐỂ KIỂM TRA QUYỀN ADMIN
     // (Dùng 'any' ép kiểu để tránh lỗi TS nếu next-auth.d.ts chưa khai báo role)
     const userRole = (session?.user as any)?.role;
-    const isAdmin = userRole === 'MANAGER' || userRole === 'STAFF';
+    const isAdmin = userRole === 'MANAGER' || userRole === 'STAFF' || userRole === 'ADMIN';
 
     // GỌI API LẤY DATA CHO MEGA MENU
     const { data: latestProductsResponse } = useGetProductsQuery({
@@ -91,7 +91,7 @@ const Header = () => {
     return (
         <header className={`fixed top-0 left-0 w-full h-[60px] sm:h-[80px] lg:h-[100px] flex items-center justify-between px-4 lg:px-[30px] font-text-header font-dm-sans z-50 transition-all duration-300
     ${scrolled ? "bg-white shadow-md" : "bg-black/20"}`}>
-            
+
             {/* ================= 1. LOGO ================= */}
             <Link href="/" aria-label="Trang chủ Cofybrew">
                 <div className="relative aspect-[487/120] w-[40vw] max-w-[150px] sm:max-w-[220px] lg:max-w-[230px]">
@@ -108,7 +108,7 @@ const Header = () => {
             <div className="hidden lg:block flex-1">
                 <nav aria-label="Điều hướng chính" className="flex justify-center">
                     <ul className={`grid grid-cols-5 gap-1 text-center transition-colors duration-300 ${scrolled ? "text-[#0B0B24]" : "text-white"}`}>
-                        
+
                         {/* ITEM: TIN TỨC (MEGA MENU) */}
                         <li className="header-center relative group cursor-pointer">
                             <span className={`flex items-center gap-1 hover:text-[#C19D56] transition-colors ${scrolled ? "text-[#0B0B24]" : "text-white"}`}>
@@ -203,9 +203,9 @@ const Header = () => {
                         {/* ITEM: BÀI VIẾT */}
                         <li className="header-center relative group">
                             <span className={`flex items-center gap-1 hover:text-[#C19D56] transition-colors ${scrolled ? "text-[#0B0B24]" : "text-white"}`}>
-                                Bài Viết 
+                                Bài Viết
                             </span>
-                            
+
                         </li>
                     </ul>
                 </nav>
@@ -213,7 +213,7 @@ const Header = () => {
 
             {/* ================= 3. RIGHT ACTIONS ================= */}
             <div className="flex gap-4 sm:gap-6 items-center">
-                
+
                 {/* 👇 2. NÚT VÀO TRANG QUẢN TRỊ (CHỈ HIỆN VỚI ADMIN) */}
                 {isAdmin && (
                     <Link href="/admin" className="hidden lg:block">
@@ -272,7 +272,7 @@ const Header = () => {
                 </button>
 
                 {/* Nút Hamburger cho Menu Mobile */}
-                <button 
+                <button
                     aria-label="Mở Menu Điều Hướng"
                     onClick={() => setIsMobileMenuOpen(true)}
                     className={`lg:hidden text-2xl sm:text-3xl hover:text-[#C19D56] transition-colors ${scrolled ? "text-[#0B0B24]" : "text-white"}`}
@@ -298,7 +298,7 @@ const Header = () => {
                             <li><Link href="/services" onClick={() => setIsMobileMenuOpen(false)}>Dịch Vụ</Link></li>
                             <li><Link href="/portfolio" onClick={() => setIsMobileMenuOpen(false)}>Bộ Sưu Tập</Link></li>
                             <li><Link href="/blog" onClick={() => setIsMobileMenuOpen(false)}>Bài Viết</Link></li>
-                            
+
                             {/* Nút Đặt Bàn (Đang comment bên ngoài nhưng bạn có thể để đây) */}
                             <li className="pt-4 border-t border-gray-100">
                                 <Link href="/book-table" onClick={() => setIsMobileMenuOpen(false)} className="text-[#C19D56] font-bold">
