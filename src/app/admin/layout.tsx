@@ -12,7 +12,7 @@ import { toast } from 'sonner';
 import { useAppDispatch } from '@/lib/hook';
 import { notificationApi } from '@/services/notificationApi';
 
-const allowedRoles = ['MANAGER', 'STAFF'];
+const allowedRoles = ['MANAGER', 'STAFF','ADMIN'];
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
     const {
@@ -26,7 +26,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
     useEffect(() => {
         // Kết nối Socket (nhớ đổi port cho khớp backend của bạn)
-        const socket = io('http://localhost:8386');
+        const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8386';
+        const socket = io(apiUrl);
 
         socket.on('NEW_NOTIFICATION', (data) => {
             // Hiện thông báo xịn xò
