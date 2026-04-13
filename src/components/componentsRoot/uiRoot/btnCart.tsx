@@ -5,11 +5,13 @@ import { MdAddShoppingCart } from "react-icons/md";
 import { useDispatch, useSelector } from 'react-redux';
 import { AppDispatch, RootState } from '@/lib/store';
 import { getCartAPI } from '@/lib/features/cartSlice';
+import { useRouter } from 'next/navigation';
 
 const CartDrawer = () => {
     const [open, setOpen] = useState(false);
     const dispatch = useDispatch<AppDispatch>();
     const { items: cartItems } = useSelector((state: RootState) => state.cart);
+    const router = useRouter();
 
     // 👇 1. SỬA LỖI TÍNH TỔNG TIỀN (Thêm ?. và || 0)
     const subTotal = cartItems.reduce((acc, item) => {
@@ -23,7 +25,7 @@ const CartDrawer = () => {
     };
 
     useEffect(() => {
-        dispatch(getCartAPI()); 
+        dispatch(getCartAPI());
     }, [dispatch]);
 
     return (
@@ -61,25 +63,46 @@ const CartDrawer = () => {
                 placement="right"
                 onClose={() => setOpen(false)}
                 open={open}
-                width={380} 
+                width={380}
                 className="font-[DM_Sans]"
                 footer={
                     <div className="flex flex-col gap-4 p-2">
+                        {/* Tổng tiền */}
                         <div className="flex justify-between text-lg font-bold text-[#111111]">
                             <span>Subtotal:</span>
                             <span className="text-[#C19D56]">{subTotal.toLocaleString('vi-VN')} đ</span>
                         </div>
-                        <Button
-                            type="primary"
-                            size="large"
-                            className="w-full h-12 text-base font-bold bg-[#111111] hover:!bg-[#C19D56]"
-                            onClick={() => alert("Chuyển trang Checkout...")}
-                        >
-                            CHECKOUT
-                        </Button>
+
+                        {/* Nhóm 2 nút Giỏ Hàng và Checkout nằm ngang */}
+                        <div className="flex gap-3">
+                            <Button
+                                size="large"
+                                className="..."
+                                onClick={() => {
+                                    setOpen(false); // 1. Đóng Drawer lại cho gọn gàng
+                                    router.push('shop/cart'); // 2. Đẩy sang trang Giỏ Hàng
+                                }}
+                            >
+                                GIỎ HÀNG
+                            </Button>
+                            <Button
+                                type="primary"
+                                size="large"
+                                className="flex-1 h-12 text-base font-bold bg-[#111111] hover:!bg-[#C19D56] border-none"
+                                onClick={() => {
+                                    setOpen(false);
+                                    alert("Chuyển trang Checkout..."); // Thay bằng router.push('/checkout')
+                                }}
+                            >
+                                CHECKOUT
+                            </Button>
+                        </div>
+
+                        {/* Nút Continue Shopping */}
                         <Button
                             type="text"
                             onClick={() => setOpen(false)}
+                            className="text-gray-500 hover:!text-[#111111]"
                         >
                             Continue Shopping
                         </Button>

@@ -1,35 +1,64 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { ConfigProvider, InputNumber, Button, Divider, Input, Modal, message } from 'antd';
+import { ConfigProvider, InputNumber, Button, Divider, Input, Modal, message, Checkbox } from 'antd';
 import { DeleteOutlined, ArrowLeftOutlined, ShoppingCartOutlined } from '@ant-design/icons';
 import { useSelector, useDispatch } from 'react-redux';
 import { AppDispatch, RootState } from '@/lib/store';
 import { removeCartItemAPI, updateQuantity } from '@/lib/features/cartSlice';
-// 👇 Nhớ import thêm action cập nhật số lượng (giả sử tên là updateQuantity) từ cartSlice
+import { useRouter } from 'next/navigation';
 
 const CartComponent = () => {
     const dispatch = useDispatch<AppDispatch>();
     const [modal, contextHolder] = Modal.useModal();
     const [isCheckingOut, setIsCheckingOut] = useState(false);
+    const router = useRouter();
 
     // Lấy data từ Redux
     const { items: cartItems } = useSelector((state: RootState) => state.cart);
 
-    // Tính tổng tiền an toàn (Sẽ tự động chạy lại khi cartItems thay đổi)
-    const subTotal = cartItems.reduce((total, item) => {
-        const price = Number(item?.product?.price) || 0;
-        const qty = item?.quantity || 0;
-        return total + (price * qty);
-    }, 0);
+    // 👇 1. STATE QUẢN LÝ CÁC SẢN PHẨM ĐƯỢC CHỌN
+    const [selectedIds, setSelectedIds] = useState<number[]>([]);
 
-    const total = subTotal; 
+    // Tự động dọn dẹp selectedIds nếu người dùng xóa 1 sản phẩm khỏi giỏ
+    useEffect(() => {
+        setSelectedIds(prev => prev.filter(id => cartItems.some(item => item.id === id)));
+    }, [cartItems]);
 
-    // 👇 Xử lý thay đổi số lượng
+    // 👇 2. CHỈ TÍNH TỔNG TIỀN CÁC SẢN PHẨM ĐƯỢC CHỌN
+    const subTotal = cartItems
+        .filter(item => selectedIds.includes(item.id))
+        .reduce((total, item) => {
+            const price = Number(item?.product?.price) || 0;
+            const qty = item?.quantity || 0;
+            return total + (price * qty);
+        }, 0);
+
+    const total = subTotal;
+
+    // 👇 3. CÁC HÀM XỬ LÝ CHECKBOX
+    const isAllSelected = cartItems.length > 0 && selectedIds.length === cartItems.length;
+    const isIndeterminate = selectedIds.length > 0 && selectedIds.length < cartItems.length;
+
+    const handleSelectAll = (e: any) => {
+        if (e.target.checked) {
+            setSelectedIds(cartItems.map((item: any) => item.id));
+        } else {
+            setSelectedIds([]);
+        }
+    };
+
+    const handleSelectItem = (id: number, checked: boolean) => {
+        if (checked) {
+            setSelectedIds(prev => [...prev, id]);
+        } else {
+            setSelectedIds(prev => prev.filter(itemId => itemId !== id));
+        }
+    };
+
     const handleQuantityChange = (id: number, value: number | null) => {
         if (value !== null && value > 0) {
-            // Cập nhật số lượng lên Redux store
             dispatch(updateQuantity({ id, quantity: value }));
         }
     };
@@ -53,37 +82,16 @@ const CartComponent = () => {
         });
     }
 
-    const handleCheckout = async () => {
-        if (cartItems.length === 0) {
-            message.warning("Giỏ hàng đang trống!");
+    // 👇 4. HÀM XỬ LÝ KHI BẤM THANH TOÁN
+    const handleCheckout = () => {
+        if (selectedIds.length === 0) {
+            message.warning('Vui lòng chọn ít nhất 1 sản phẩm để thanh toán!');
             return;
         }
-
-        setIsCheckingOut(true);
-        try {
-            const response = await fetch('http://localhost:8386/payment/create-url', {
-                method: 'POST',
-                headers: { 
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    amount: total, 
-                })
-            });
-
-            const data = await response.json();
-
-            if (data.checkoutUrl) {
-                window.location.href = data.checkoutUrl;
-            } else {
-                message.error(data.message || 'Không thể tạo link thanh toán lúc này!');
-            }
-        } catch (error) {
-            console.error("Checkout Error:", error);
-            message.error('Lỗi kết nối máy chủ thanh toán!');
-        } finally {
-            setIsCheckingOut(false);
-        }
+        
+        // Lưu danh sách ID các món muốn mua vào sessionStorage để trang Checkout đọc
+        sessionStorage.setItem('checkoutCartIds', JSON.stringify(selectedIds));
+        router.push('/shop/checkout?mode=cart');
     };
 
     if (cartItems.length === 0) {
@@ -116,7 +124,6 @@ const CartComponent = () => {
             <div className="bg-[#fcfcfc] min-h-screen py-10 sm:py-16">
                 <div className="container mx-auto px-4 sm:px-6 lg:px-24">
 
-                    {/* Breadcrumb / Title */}
                     <div className="mb-10 text-center sm:text-left">
                         <h1 className="text-3xl sm:text-4xl font-[Marcellus] text-[#111111] mb-2">Giỏ hàng</h1>
                         <p className="text-gray-500 font-[DM_Sans]">
@@ -128,8 +135,16 @@ const CartComponent = () => {
 
                         {/* --- CỘT TRÁI: DANH SÁCH SẢN PHẨM --- */}
                         <div className="w-full lg:basis-2/3">
+                            {/* Tiêu đề bảng */}
                             <div className="hidden sm:grid grid-cols-12 gap-4 border-b border-gray-200 pb-4 text-sm font-bold text-gray-400 uppercase tracking-wider font-[DM_Sans]">
-                                <div className="col-span-6">Sản phẩm</div>
+                                <div className="col-span-6 flex items-center gap-3">
+                                    <Checkbox 
+                                        indeterminate={isIndeterminate} 
+                                        checked={isAllSelected} 
+                                        onChange={handleSelectAll} 
+                                    />
+                                    <span>Sản phẩm</span>
+                                </div>
                                 <div className="col-span-2 text-center">Giá</div>
                                 <div className="col-span-2 text-center">Số lượng</div>
                                 <div className="col-span-2 text-right">Tổng cộng</div>
@@ -138,15 +153,24 @@ const CartComponent = () => {
                             <div className="flex flex-col gap-6 mt-6">
                                 {cartItems.map((item) => (
                                     <div key={item.id} className="group relative bg-white border border-gray-100 p-4 rounded-lg sm:border-0 sm:bg-transparent sm:p-0 sm:rounded-none flex flex-col sm:grid sm:grid-cols-12 gap-4 items-center shadow-sm sm:shadow-none">
+                                        
                                         <div className="relative col-span-6 flex gap-4 w-full items-center">
+                                            {/* Checkbox trên Mobile sẽ đặt góc trên trái, Desktop thì căn giữa */}
+                                            <div className="absolute top-4 left-4 sm:static sm:flex items-center z-10">
+                                                <Checkbox 
+                                                    checked={selectedIds.includes(item.id)}
+                                                    onChange={(e) => handleSelectItem(item.id, e.target.checked)}
+                                                />
+                                            </div>
+
                                             <button
                                                 onClick={() => handleRemoveItem(item.id)}
-                                                className="absolute top-4 right-4 sm:static text-gray-400 hover:text-red-500 transition-colors"
+                                                className="absolute top-4 right-4 sm:static text-gray-400 hover:text-red-500 transition-colors z-10"
                                             >
                                                 <DeleteOutlined />
                                             </button>
 
-                                            <div className="w-20 h-20 sm:w-24 sm:h-24 bg-gray-100 flex-shrink-0 overflow-hidden rounded border border-gray-200">
+                                            <div className="w-20 h-20 sm:w-24 sm:h-24 bg-gray-100 flex-shrink-0 overflow-hidden rounded border border-gray-200 ml-8 sm:ml-0">
                                                 <img
                                                     src={item?.product?.thumbnail || '/images/placeholder.png'}
                                                     alt={item?.product?.name || 'Sản phẩm'}
@@ -155,10 +179,10 @@ const CartComponent = () => {
                                             </div>
 
                                             <div className="flex flex-col">
-                                                <Link href={`/products/${item?.product?.id}`} className="text-[#111111] font-[DM_Sans] font-bold text-lg hover:text-[#C19D56] transition line-clamp-1">
+                                                <Link href={`/shop/${item?.product?.id}`} className="text-[#111111] font-[DM_Sans] font-bold text-lg hover:text-[#C19D56] transition line-clamp-1">
                                                     {item?.product?.name || 'Chưa cập nhật'}
                                                 </Link>
-                                                <span className="text-sm text-gray-400 mt-1">Phân loại: Mặc định</span> 
+                                                <span className="text-sm text-gray-400 mt-1">Phân loại: Mặc định</span>
                                             </div>
                                         </div>
 
@@ -169,11 +193,10 @@ const CartComponent = () => {
                                         <div className="col-span-2 flex justify-between sm:justify-center items-center w-full sm:w-auto mt-4 sm:mt-0 border-t sm:border-0 pt-4 sm:pt-0 border-gray-100">
                                             <span className="sm:hidden text-gray-500 font-medium">Số lượng:</span>
                                             <div className="custom-input-number">
-                                                {/* 👇 Sửa defaultValue thành value 👇 */}
                                                 <InputNumber
                                                     min={1}
                                                     max={99}
-                                                    value={item?.quantity || 1} 
+                                                    value={item?.quantity || 1}
                                                     onChange={(val) => handleQuantityChange(item.id, val)}
                                                     className="w-16"
                                                 />
@@ -191,7 +214,7 @@ const CartComponent = () => {
                             </div>
 
                             <div className="mt-8 flex justify-between items-center">
-                                <Link href="/products" className="flex items-center gap-2 text-[#111111] font-bold hover:text-[#C19D56] transition">
+                                <Link href="/shop" className="flex items-center gap-2 text-[#111111] font-bold hover:text-[#C19D56] transition">
                                     <ArrowLeftOutlined /> Tiếp tục mua sắm
                                 </Link>
                                 <button className="text-gray-400 hover:text-[#111111] font-[DM_Sans] text-sm underline">
@@ -208,7 +231,7 @@ const CartComponent = () => {
                                 </h3>
 
                                 <div className="flex justify-between items-center mb-4">
-                                    <span className="text-gray-600 font-[DM_Sans]">Tạm tính</span>
+                                    <span className="text-gray-600 font-[DM_Sans]">Tạm tính ({selectedIds.length} món)</span>
                                     <span className="text-[#111111] font-bold font-[DM_Sans]">
                                         {subTotal.toLocaleString('vi-VN')} đ
                                     </span>
@@ -237,7 +260,7 @@ const CartComponent = () => {
                                     type="primary"
                                     block
                                     size="large"
-                                    onClick={handleCheckout}
+                                    onClick={handleCheckout} // 👈 GỌI HÀM MỚI Ở ĐÂY
                                     loading={isCheckingOut}
                                     className="h-14 text-base font-bold bg-[#111111] hover:!bg-[#C19D56] uppercase tracking-widest"
                                 >

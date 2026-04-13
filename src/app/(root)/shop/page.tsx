@@ -1,4 +1,3 @@
-// app/(root)/shop/page.tsx
 import ImageBackGround from "@/components/componentsRoot/componentShop/background";
 import BodyShop from "@/components/componentsRoot/componentShop/bodyShop";
 
@@ -7,11 +6,9 @@ export default async function ShopPage({
 }: {
     searchParams: Promise<{ [key: string]: string | string[] | undefined }>
 }) {
-    // 1. Cấu hình URL cơ sở (Dùng 127.0.0.1 để tránh lỗi phân giải DNS của Node.js)
     const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8386";
     const resolvedParams = await searchParams;
 
-    // 2. Lấy params từ URL
     const page = resolvedParams.page || '1';
     const sortBy = resolvedParams.sortBy || 'createdAt';
     const category = resolvedParams.category || '';
@@ -34,9 +31,7 @@ export default async function ShopPage({
 
     if (category) query.append('productCategoryId', category.toString());
 
-    // 3. TỐI ƯU HÓA: Gọi API song song (Parallel Fetching)
-    // Tự động bắt lỗi riêng lẻ, API nào chết thì trả về mảng rỗng, không làm sập toàn bộ trang
-    
+    // 1. API Sản phẩm
     const fetchProducts = fetch(`${apiUrl}/products?${query.toString()}`, { cache: 'no-store' })
         .then(res => res.ok ? res.json() : { data: [], meta: null })
         .catch(err => {
@@ -44,7 +39,7 @@ export default async function ShopPage({
             return { data: [], meta: null };
         });
 
-    // 👇 ĐÃ SỬA: Dùng /product-category (không có chữ 's' ở cuối) chuẩn xác theo Backend
+    // 2. API Danh mục
     const fetchCategories = fetch(`${apiUrl}/product-category`, { cache: 'no-store' })
         .then(res => res.ok ? res.json() : [])
         .catch(err => {
@@ -52,17 +47,36 @@ export default async function ShopPage({
             return [];
         });
 
-    // Chờ cả 2 API hoàn thành cùng một lúc
-    const [productsData, categoriesData] = await Promise.all([fetchProducts, fetchCategories]);
+    // 👇 3. THÊM MỚI: API Best Sellers (Lấy top 5)
+    // Dùng cache: 'no-store' để luôn lấy số liệu real-time, hoặc có thể đổi thành { next: { revalidate: 60 } } để cache 60s
+    // THAY ĐOẠN NÀY ĐỂ XEM CHÍNH XÁC THẰNG NESTJS TRẢ VỀ CÁI GÌ
+    const fetchBestSellers = fetch(`${apiUrl}/products/top/best-sellers`, {
+        cache: 'no-store',
+        headers: { 'Cache-Control': 'no-cache' }
+    })
+        .then(async (res) => {
+            const json = await res.json();
+            console.log(`🕵️ [TRINH SÁT] Trạng thái API: ${res.status}`);
+            console.log(`🕵️ [TRINH SÁT] NestJS trả về cho Next.js:`, json);
+            return json;
+        })
+        .catch(err => {
+            console.error("❌ NEXT.JS LỖI NẶNG:", err.message);
+            return { data: [] };
+        });
+    const [productsData, categoriesData, bestSellersData] = await Promise.all([
+        fetchProducts,
+        fetchCategories,
+        fetchBestSellers
+    ]);
 
-    // 4. Bóc tách dữ liệu chuẩn bị truyền xuống component con
     const finalProducts = productsData?.data || [];
     const finalMeta = productsData?.meta || null;
-    
-    // Đảm bảo categories luôn là mảng (Array) để tránh lỗi .map()
-    const finalCategories = Array.isArray(categoriesData) 
-        ? categoriesData 
-        : (categoriesData?.data || []);
+    const finalCategories = Array.isArray(categoriesData) ? categoriesData : (categoriesData?.data || []);
+    const finalBestSellers = bestSellersData?.data || [];
+
+    // 👇 2. ĐẶT MÁY QUÉT Ở ĐÂY (TRƯỚC KHI RETURN)
+    console.log("👉 [DEBUG NEXTJS] Dữ liệu Best Sellers chuẩn bị đẩy xuống giao diện:", finalBestSellers);
 
     return (
         <>
@@ -71,6 +85,7 @@ export default async function ShopPage({
                 initialProducts={finalProducts}
                 categories={finalCategories}
                 meta={finalMeta}
+                bestSellers={finalBestSellers} // 👇 TRUYỀN PROPS XUỐNG ĐÂY
             />
         </>
     );

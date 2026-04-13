@@ -1,9 +1,10 @@
-'use client'
+'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { useParams } from 'next/navigation';
+// 👇 Import thêm useRouter ở đây
+import { useParams, useRouter } from 'next/navigation';
 import { Search, Loader2 } from 'lucide-react';
 import { useDispatch } from 'react-redux';
 import { AppDispatch } from '@/lib/store';
@@ -12,37 +13,30 @@ import { openLoginModal } from '@/lib/features/ui/uiSlice';
 import { useSession } from 'next-auth/react';
 import { message } from 'antd';
 
-// 👇 1. Import đúng hook useGetOneProductQuery và type Product từ productApi
 import { useGetOneProductQuery, Product } from '@/services/productApi';
 
 const ProductDetailComp = () => {
-    const { id } = useParams<{ id: string }>(); // Lấy ID từ URL (VD: /shop/123 -> id = 123)
+    const { id } = useParams<{ id: string }>(); 
+    // 👇 Khởi tạo router
+    const router = useRouter();
     const dispatch = useDispatch<AppDispatch>();
-    const { data: session, status } = useSession();
+    const { data: session } = useSession();
 
-    // State quản lý số lượng
     const [quantity, setQuantity] = useState<number>(1);
-    
-    // State quản lý Tab đang được chọn
     const [activeTab, setActiveTab] = useState<'description' | 'additional' | 'reviews'>('description');
 
-    // 👇 2. Thay thế thành useGetOneProductQuery
     const { data: responseData, isLoading, isError } = useGetOneProductQuery(Number(id), {
-        skip: !id, // Bỏ qua nếu chưa có id
+        skip: !id, 
     });
 
-    // Trích xuất dữ liệu (Do cấu trúc API của bạn trả thẳng object Product hoặc bọc trong { data: ... })
-    // Ép kiểu as Product để Typescript không báo lỗi
     const product = (responseData as any)?.data || responseData as Product | undefined;
-
-    const userEmail = session?.user?.email;
 
     const handleQuantityChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const val = parseInt(e.target.value);
         if (val > 0) setQuantity(val);
     };
 
-    // 👇 3. Hàm xử lý Thêm vào giỏ hàng (có kèm số lượng tùy chỉnh)
+    // Hàm Thêm vào giỏ hàng
     const handleAddToCart = () => {
         if (!product) return;
         
@@ -54,7 +48,7 @@ const ProductDetailComp = () => {
 
         dispatch(addToCartAPI({
             productId: product.id,
-            quantity: quantity, // Lấy đúng số lượng user đang nhập
+            quantity: quantity,
         }))
             .unwrap()
             .then(() => {
@@ -65,7 +59,31 @@ const ProductDetailComp = () => {
             });
     };
 
-    // Hiển thị trạng thái Loading
+    // 👇 Hàm Mua Ngay (Bỏ qua giỏ hàng -> Sang thẳng trang thanh toán)
+    const handleBuyNow = () => {
+        if (!product) return;
+        
+        if (!session) {
+            message.warning('Vui lòng đăng nhập để mua hàng!');
+            dispatch(openLoginModal());
+            return;
+        }
+
+        // 1. Tạo 1 object giả lập giống cấu trúc CartItem để trang Checkout dễ đọc
+        const buyNowData = {
+            id: 'buynow_item', 
+            productId: product.id,
+            quantity: quantity,
+            product: product // Chứa sẵn name, price, thumbnail... để hiện thị ra bảng
+        };
+
+        // 2. Lưu tạm vào bộ nhớ ảo của trình duyệt
+        sessionStorage.setItem('buyNowItem', JSON.stringify(buyNowData));
+
+        // 3. Đẩy thẳng sang trang Checkout và gắn thêm cờ nhận diện ?mode=buynow
+        router.push('/shop/checkout?mode=buynow');
+    };
+
     if (isLoading) {
         return (
             <div className="flex flex-col items-center justify-center min-h-[50vh] text-[#C19D56]">
@@ -75,7 +93,6 @@ const ProductDetailComp = () => {
         );
     }
 
-    // Hiển thị nếu không tìm thấy sản phẩm
     if (isError || !product) {
         return (
             <div className="flex flex-col items-center justify-center min-h-[50vh] text-stone-500">
@@ -103,12 +120,10 @@ const ProductDetailComp = () => {
                 
                 {/* Left: Product Image */}
                 <div className="relative border border-[#C19D56] aspect-square flex items-center justify-center p-8 bg-white group">
-                    {/* Zoom Icon */}
                     <button className="absolute top-4 right-4 bg-white p-2 rounded-full shadow-sm border border-stone-100 hover:bg-stone-50 transition-colors z-10 text-stone-600">
                         <Search size={18} />
                     </button>
                     
-                    {/* Image */}
                     <div className="relative w-full h-full">
                         <Image
                             src={product.thumbnail && product.thumbnail.trim() !== "" ? product.thumbnail : "/images/placeholder.png"} 
@@ -129,34 +144,47 @@ const ProductDetailComp = () => {
                     </p>
 
                     <div className="text-stone-500 text-sm leading-relaxed space-y-6 mb-8">
-                        {/* Hiển thị mô tả thật từ Database */}
                         <p className="whitespace-pre-wrap">
                             {product.description || "Chưa có mô tả chi tiết cho sản phẩm này."}
                         </p>
                     </div>
 
-                    {/* Add to Cart Action */}
-                    <div className="flex items-center gap-4 py-8 border-y border-stone-100 mb-8">
-                        <input
-                            type="number"
-                            value={quantity}
-                            onChange={handleQuantityChange}
-                            min="1"
-                            className="w-16 h-12 bg-stone-100 border-none text-center text-stone-700 font-semibold outline-none focus:ring-2 focus:ring-[#C19D56]"
-                        />
-                        <button 
-                            onClick={handleAddToCart}
-                            className="h-12 px-8 bg-[#C19D56] hover:bg-[#86624A] text-white font-bold text-sm tracking-wider transition-colors duration-300"
-                        >
-                            ADD TO CART
-                        </button>
+                    {/* 👇 SỬA LẠI LAYOUT CHỖ NÀY */}
+                    <div className="flex flex-col gap-6 py-8 border-y border-stone-100 mb-8">
+                        {/* Dòng 1: Số lượng */}
+                        <div className="flex items-center gap-4">
+                            <span className="text-stone-800 font-bold uppercase text-sm tracking-wider">Số lượng:</span>
+                            <input
+                                type="number"
+                                value={quantity}
+                                onChange={handleQuantityChange}
+                                min="1"
+                                className="w-16 h-12 bg-stone-100 border-none text-center text-stone-700 font-semibold outline-none focus:ring-2 focus:ring-[#C19D56]"
+                            />
+                        </div>
+
+                        {/* Dòng 2: 2 Nút Add to Cart và Buy Now */}
+                        <div className="flex flex-col sm:flex-row gap-4">
+                            <button 
+                                onClick={handleAddToCart}
+                                className="flex-1 h-12 border-2 border-[#C19D56] text-[#C19D56] hover:bg-[#C19D56] hover:text-white font-bold text-sm tracking-wider transition-all duration-300 uppercase"
+                            >
+                                Thêm vào giỏ hàng
+                            </button>
+                            <button 
+                                onClick={handleBuyNow}
+                                className="flex-1 h-12 bg-[#111111] hover:bg-[#C19D56] text-white! font-bold text-sm tracking-wider transition-all duration-300 shadow-md hover:shadow-lg uppercase"
+                            >
+                                Mua Ngay
+                            </button>
+                        </div>
                     </div>
 
                     {/* Meta Data */}
                     <div className="text-sm space-y-2 text-stone-500">
                         <p>
                             <span className="text-stone-900 font-bold mr-1">SKU:</span> 
-                            SP-{product.id.toString().padStart(5, '0')} {/* Tạo SKU ảo từ ID */}
+                            SP-{product.id.toString().padStart(5, '0')}
                         </p>
                         <p>
                             <span className="text-stone-900 font-bold mr-1">Category:</span> 

@@ -8,25 +8,24 @@ import Link from 'next/link';
 import { useDispatch } from 'react-redux';
 import { useRouter, useSearchParams, usePathname } from 'next/navigation';
 import { useTransition } from 'react';
-
 import { Product } from '@/services/productApi';
 
-// Khai báo kiểu dữ liệu truyền từ Server xuống
 interface BodyShopProps {
     initialProducts: Product[];
     categories: any[];
     meta: any;
+    bestSellers: Product[];
 }
 
-const BodyShop = ({ initialProducts, categories, meta }: BodyShopProps) => {
+const BodyShop = ({ initialProducts, categories, meta, bestSellers }: BodyShopProps) => {
     const [messageApi, contextHolder] = message.useMessage();
     const dispatch = useDispatch<AppDispatch>();
     const { data: session } = useSession();
-    
+
     const router = useRouter();
     const pathname = usePathname();
     const searchParams = useSearchParams();
-    
+
     // Dùng useTransition để giữ lại hiệu ứng loading vòng xoay khi chuyển trang/lọc
     const [isPending, startTransition] = useTransition();
 
@@ -37,7 +36,7 @@ const BodyShop = ({ initialProducts, categories, meta }: BodyShopProps) => {
     // Hàm cập nhật URL chung
     const updateUrl = (newParams: Record<string, string | null>) => {
         const params = new URLSearchParams(searchParams.toString());
-        
+
         Object.entries(newParams).forEach(([key, value]) => {
             if (value) {
                 params.set(key, value);
@@ -166,18 +165,35 @@ const BodyShop = ({ initialProducts, categories, meta }: BodyShopProps) => {
                                 <h3 className="relative pl-5 text-[#111111] text-xl sm:text-2xl mb-4 font-semibold before:content-[''] before:absolute before:top-1/2 before:left-0 before:-translate-y-1/2 before:w-[8px] before:h-[8px] before:rounded-full before:bg-[#C19D56]">
                                     Best Sellers
                                 </h3>
+
                                 <ul className="space-y-4">
-                                    {['Dispensing Tray', 'Coffee Capsule', 'Dolce Gusto', 'Measuring Cup'].map((item) => (
-                                        <li key={item}>
-                                            <a className="text-sm sm:text-base font-bold text-[#262626] hover:text-[#C19D56] transition-colors block">
-                                                {item}
-                                            </a>
-                                            <div className="flex gap-2 text-xs sm:text-sm mt-1">
-                                                <del className="text-[#797979]">£240.00</del>
-                                                <ins className="text-[#C19D56] no-underline font-semibold">£230.00</ins>
-                                            </div>
-                                        </li>
-                                    ))}
+                                    {/* 👇 2. RENDER TRỰC TIẾP TỪ PROPS, KHÔNG CẦN LOADING */}
+                                    {bestSellers && bestSellers.length > 0 ? (
+                                        bestSellers.map((item) => (
+                                            <li key={item.id} className="flex gap-3 items-center group">
+                                                <Link href={`/shop/${item.id}`} className="w-16 h-16 relative flex-shrink-0 bg-[#f9f9f9] rounded-md overflow-hidden border border-gray-100">
+                                                    <img
+                                                        src={item.thumbnail || "/images/placeholder.png"}
+                                                        alt={item.name}
+                                                        className="object-cover w-full h-full transition-transform duration-300 group-hover:scale-110"
+                                                    />
+                                                </Link>
+
+                                                <div className="flex-1">
+                                                    <Link href={`/shop/${item.id}`} className="text-sm sm:text-base font-bold text-[#262626] hover:text-[#C19D56] transition-colors line-clamp-1">
+                                                        {item.name}
+                                                    </Link>
+                                                    <div className="flex gap-2 text-xs sm:text-sm mt-1">
+                                                        <ins className="text-[#C19D56] no-underline font-semibold">
+                                                            {Number(item.price).toLocaleString('vi-VN')} đ
+                                                        </ins>
+                                                    </div>
+                                                </div>
+                                            </li>
+                                        ))
+                                    ) : (
+                                        <p className="text-sm text-gray-500">Chưa có sản phẩm nào</p>
+                                    )}
                                 </ul>
                             </div>
                         </div>

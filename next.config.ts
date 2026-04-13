@@ -21,6 +21,12 @@ const nextConfig: NextConfig = {
         hostname: 'res.cloudinary.com',
         pathname: '/**', // Cho phép tất cả các đường dẫn từ domain này
       },
+      {
+        protocol: 'https',
+        hostname: 'images.unsplash.com',
+        port: '',
+        pathname: '/**', // Cho phép tất cả các đường dẫn từ host này
+      },
     ],
     
   },

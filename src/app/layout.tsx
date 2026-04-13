@@ -5,6 +5,7 @@ import "antd/dist/reset.css";
 import Providers from '@/components/Providers'; // Giữ lại Provider nếu Admin cũng cần Redux/Auth
 import { Toaster } from "@/components/ui/sonner" //
 import StoreProvider from '@/lib/StoreProvider';
+import '@ant-design/v5-patch-for-react-19';
 
 const dmSans = DM_Sans({
   subsets: ["latin"],
