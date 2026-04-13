@@ -3,10 +3,14 @@ import Credentials from "next-auth/providers/credentials";
 import Google from "next-auth/providers/google";
 
 export const authConfig = {
+  // 👇 1. THÊM DÒNG NÀY: Chìa khóa vạn năng cho Vercel Deployment
+  trustHost: true, 
+  
   providers: [
     Google({
-      clientId: process.env.GOOGLE_CLIENT_ID,
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+      // 👇 2. ÉP KIỂU CHUỖI ĐỂ NEXTAUTH KHÔNG BÁO LỖI UNDEFINED
+      clientId: process.env.GOOGLE_CLIENT_ID as string || "",
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET as string || "",
       authorization: {
         params: {
           prompt: "consent",
