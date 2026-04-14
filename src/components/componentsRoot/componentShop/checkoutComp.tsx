@@ -11,7 +11,7 @@ import { useSearchParams } from 'next/navigation';
 export default function CheckoutPage() {
     const [form] = Form.useForm();
     const [isCheckingOut, setIsCheckingOut] = useState(false);
-    
+
     const { items: cartItems } = useSelector((state: RootState) => state.cart);
     const shippingMethod = Form.useWatch('shippingMethod', form);
 
@@ -69,7 +69,7 @@ export default function CheckoutPage() {
 
             const itemsToBuy = displayItems.map((item: any) => ({
                 // Tùy thuộc vào cấu trúc của Mua Ngay hay Cart mà lấy đúng productId
-                productId: item.productId || item.product?.id || item.id, 
+                productId: item.productId || item.product?.id || item.id,
                 quantity: item.quantity
             }));
 
@@ -88,11 +88,11 @@ export default function CheckoutPage() {
 
             const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8386'}/payment/checkout`, {
                 method: 'POST',
-                headers: { 
+                headers: {
                     'Content-Type': 'application/json',
                     'Authorization': `Bearer ${token}`
                 },
-                body: JSON.stringify(payload) 
+                body: JSON.stringify(payload)
             });
 
             const data = await response.json();
@@ -110,6 +110,11 @@ export default function CheckoutPage() {
         }
     };
 
+    const onFinishFailed = (errorInfo: any) => {
+        console.log("Nguyên nhân Form bị chặn:", errorInfo);
+        message.error("Vui lòng kiểm tra lại các ô bị viền đỏ!");
+    };
+
     return (
         <ConfigProvider
             theme={{
@@ -125,6 +130,7 @@ export default function CheckoutPage() {
                         form={form}
                         layout="vertical"
                         onFinish={onFinish}
+                        onFinishFailed={onFinishFailed}
                         initialValues={{ shippingMethod: 'delivery' }}
                         requiredMark={(label, info) => (
                             <span>
@@ -134,13 +140,13 @@ export default function CheckoutPage() {
                         className="font-[DM_Sans]"
                     >
                         <div className="flex flex-col lg:flex-row gap-10 lg:gap-16">
-                            
+
                             {/* --- CỘT TRÁI: THÔNG TIN KHÁCH HÀNG --- */}
                             <div className="flex-1">
                                 <h2 className="text-3xl md:text-4xl text-[#111111] mb-6 font-[Marcellus] font-normal">
                                     Chi tiết đơn hàng
                                 </h2>
-                                
+
                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4">
                                     <Form.Item label="Họ" name="lastName" rules={[{ required: true, message: 'Vui lòng nhập họ' }]}>
                                         <Input size="large" className="rounded-sm" />
@@ -160,7 +166,7 @@ export default function CheckoutPage() {
                                 <Form.Item label="Số điện thoại" name="phone" rules={[{ required: true, message: 'Vui lòng nhập số điện thoại' }]}>
                                     <Input size="large" className="rounded-sm" placeholder="VD: 0901234567" />
                                 </Form.Item>
-                                
+
                                 {shippingMethod === 'delivery' && (
                                     <div className="animate-fadeIn">
                                         <Form.Item label="Địa chỉ giao hàng" name="streetAddress" rules={[{ required: true, message: 'Vui lòng nhập địa chỉ' }]}>
@@ -174,19 +180,19 @@ export default function CheckoutPage() {
 
                                 {shippingMethod === 'takeaway' && (
                                     <div className="animate-fadeIn">
-                                        <Form.Item 
-                                            label="Giờ lấy đơn dự kiến" 
-                                            name="pickupTime" 
+                                        <Form.Item
+                                            label="Giờ lấy đơn dự kiến"
+                                            name="pickupTime"
                                             rules={[{ required: true, message: 'Vui lòng chọn giờ lấy hàng' }]}
                                         >
-                                            <TimePicker 
-                                                size="large" 
-                                                format="HH:mm" 
-                                                className="w-full rounded-sm" 
+                                            <TimePicker
+                                                size="large"
+                                                format="HH:mm"
+                                                className="w-full rounded-sm"
                                                 placeholder="Chọn thời gian"
                                                 minuteStep={15}
                                                 disabledTime={() => ({
-                                                    disabledHours: () => [0,1,2,3,4,5,6,22,23],
+                                                    disabledHours: () => [0, 1, 2, 3, 4, 5, 6, 22, 23],
                                                 })}
                                             />
                                         </Form.Item>
@@ -207,9 +213,9 @@ export default function CheckoutPage() {
                                     Thông tin bổ sung
                                 </h2>
                                 <Form.Item label="Ghi chú đơn hàng (Tùy chọn)" name="orderNotes">
-                                    <Input.TextArea 
-                                        rows={6} 
-                                        placeholder="Ghi chú về đơn hàng của bạn, ví dụ: ít đường, nhiều đá, địa chỉ khó tìm..." 
+                                    <Input.TextArea
+                                        rows={6}
+                                        placeholder="Ghi chú về đơn hàng của bạn, ví dụ: ít đường, nhiều đá, địa chỉ khó tìm..."
                                         className="rounded-sm resize-y"
                                     />
                                 </Form.Item>
@@ -246,7 +252,7 @@ export default function CheckoutPage() {
                                                 <td colSpan={2} className="py-8 px-5 text-center text-gray-400">Bạn chưa chọn mua sản phẩm nào</td>
                                             </tr>
                                         )}
-                                        
+
                                         <tr>
                                             <td className="py-4 px-5 font-bold text-[#555] text-lg">Tổng cộng</td>
                                             <td className="py-4 px-5 font-bold text-[#C19D56] text-xl text-right">{total.toLocaleString('vi-VN')} đ</td>
@@ -257,8 +263,9 @@ export default function CheckoutPage() {
 
                             {/* Nút Đặt Hàng */}
                             <div className="mt-8 flex justify-end">
-                                <button 
-                                    type="submit"
+                                <button
+                                    type="button"
+                                    onClick={() => form.submit()}
                                     disabled={displayItems.length === 0 || isCheckingOut}
                                     className={`px-10 py-4 font-bold tracking-widest transition-all duration-300 uppercase
                                         ${displayItems.length === 0 || isCheckingOut ? 'bg-gray-300 text-gray-500 cursor-not-allowed' : 'bg-[#111111] text-white! hover:bg-[#C19D56]'}`}

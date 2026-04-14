@@ -47,7 +47,8 @@ const PaymentResultPage = () => {
                     return;
                 }
 
-                const response = await fetch(`http://localhost:8386/payment/vnpay-return?${queryString}`, {
+                const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8386';
+                const response = await fetch(`${apiUrl}/payment/vnpay-return?${queryString}`, {
                     method: 'GET',
                     headers: {
                         'Authorization': `Bearer ${token}` // 👈 GẮN TOKEN XỊN VÀO ĐÂY
@@ -83,7 +84,7 @@ const PaymentResultPage = () => {
     useEffect(() => {
         if (status === 'success') {
             if (countdown <= 0) {
-                router.push('/');
+                router.push('/shop');
                 return;
             }
             const timer = setInterval(() => setCountdown(prev => prev - 1), 1000);
