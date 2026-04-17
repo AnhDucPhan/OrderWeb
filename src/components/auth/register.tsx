@@ -5,8 +5,10 @@ import { FaRegEye } from "react-icons/fa";
 import { IoIosEyeOff } from "react-icons/io";
 import { FaArrowLeftLong } from "react-icons/fa6";
 import { useState, Dispatch, SetStateAction } from "react";
-import { useCreateUserMutation } from "@/services/userApi";
-// 👇 1. Import hook tạo User từ RTK Query (Nhớ chỉnh lại đường dẫn cho đúng với dự án của bạn)
+import { useRouter } from 'next/navigation'; // 👇 Thêm useRouter để chuyển trang
+import { message } from "antd"; // 👇 Dùng antd message cho đẹp thay vì alert
+import { openVerifyModal } from "@/lib/features/ui/uiSlice";
+import { useDispatch } from "react-redux";
 
 interface RegisterProps {
     openFormRegister: boolean;
@@ -15,57 +17,62 @@ interface RegisterProps {
 }
 
 const Register = ({ openFormRegister, setOpenFormRegister, onSwitchToLogin }: RegisterProps) => {
-    
+    const dispatch = useDispatch();
     // State form
     const [name, setName] = useState('');
-    const [phone, setPhone] = useState('');
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [showPassword, setShowPassword] = useState(false);
+    
     const [errorMsg, setErrorMsg] = useState('');
-
-    // 👇 2. Lấy hàm tạo user và trạng thái loading từ RTK Query
-    const [createUser, { isLoading }] = useCreateUserMutation();
+    const [isLoading, setIsLoading] = useState(false); // 👇 Quản lý loading thủ công
+    
+    const router = useRouter();
 
     const handleRegister = async (e: React.FormEvent) => {
         e.preventDefault(); 
         setErrorMsg('');
-
-        // 👇 3. Đóng gói dữ liệu vào FormData (vì BE của bạn có nhận file avatar)
-        const formData = new FormData();
-        formData.append('name', name);
-        formData.append('phoneNumber', phone); // Khớp với interface User của bạn
-        formData.append('email', email);
-        formData.append('password', password);
-        formData.append('role', 'USER'); // Set role mặc định
+        setIsLoading(true);
 
         try {
-            // 👇 4. Gọi API qua RTK Query và dùng .unwrap() để bắt lỗi dễ dàng
-            await createUser(formData).unwrap();
+            // 👇 GỌI TRỰC TIẾP VÀO CỬA DÀNH CHO KHÁCH HÀNG (auth/register)
+            const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/register`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    name,
+                    email,
+                    password
+                }),
+            });
 
-            // Thành công
-            alert("Tạo tài khoản thành công! Vui lòng đăng nhập.");
-            
-            // Xóa trắng form
-            setName('');
-            setPhone('');
-            setEmail('');
-            setPassword('');
-            
-            // Chuyển sang màn hình Đăng nhập
-            onSwitchToLogin();
+            const data = await res.json();
 
-        } catch (error: any) {
-            // Bắt lỗi từ Backend (Ví dụ: "Email đã tồn tại")
-            console.error("Lỗi đăng ký:", error);
-            
-            // Nếu NestJS ném ra BadRequestException, lỗi thường nằm trong error.data.message
-            const backendError = error?.data?.message;
-            if (Array.isArray(backendError)) {
-                setErrorMsg(backendError[0]); // Lỗi validation array của class-validator
+            if (res.ok) {
+                // Thành công
+                message.success("Đăng ký thành công! Vui lòng kiểm tra email.");
+                // Xóa trắng form
+                setName('');
+                setEmail('');
+                setPassword('');
+                
+                // Đóng popup đăng ký
+                setOpenFormRegister(false);
+
+                // Chuyển sang màn hình xác thực 6 số
+                dispatch(openVerifyModal(email));
+
             } else {
-                setErrorMsg(backendError || "Đăng ký thất bại, vui lòng thử lại!");
+                // Bắt lỗi từ Backend (Ví dụ: "Email đã tồn tại")
+                setErrorMsg(data.message || "Đăng ký thất bại, vui lòng thử lại!");
             }
+        } catch (error) {
+            console.error("Lỗi đăng ký:", error);
+            setErrorMsg("Lỗi kết nối đến máy chủ!");
+        } finally {
+            setIsLoading(false);
         }
     }
 
@@ -116,18 +123,6 @@ const Register = ({ openFormRegister, setOpenFormRegister, onSwitchToLogin }: Re
                             </div>
 
                             <div className="flex flex-col gap-1">
-                                <label className="text-sm font-medium text-gray-700">Phone Number</label>
-                                <input
-                                    type="tel"
-                                    value={phone}
-                                    onChange={(e) => setPhone(e.target.value)}
-                                    placeholder="0987654321"
-                                    required
-                                    className="w-full rounded-lg border border-gray-300 px-4 py-2.5 outline-none focus:ring-2 focus:ring-[#C19D56]"
-                                />
-                            </div>
-
-                            <div className="flex flex-col gap-1">
                                 <label className="text-sm font-medium text-gray-700">Email</label>
                                 <input
                                     type="email"
@@ -161,7 +156,6 @@ const Register = ({ openFormRegister, setOpenFormRegister, onSwitchToLogin }: Re
                                 </div>
                             </div>
 
-                            {/* Nút Submit tự động vô hiệu hóa (disabled) khi đang tải */}
                             <button
                                 type="submit"
                                 disabled={isLoading}

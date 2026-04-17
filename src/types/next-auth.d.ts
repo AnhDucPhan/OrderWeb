@@ -7,6 +7,7 @@ declare module "next-auth" {
    */
   interface Session {
     accessToken?: string
+    isExpired?: boolean;
     user: {
       id: string
       role?: string
@@ -33,5 +34,7 @@ declare module "next-auth/jwt" {
     accessToken?: string
     id?: string
     role?: string
+    isExpired?: boolean;
+    accessToken?: string;
   }
 }

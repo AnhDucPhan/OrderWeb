@@ -21,10 +21,11 @@ import {
     closeRegisterModal,
     closeAllAuthModals
 } from "@/lib/features/ui/uiSlice";
-import { getCartAPI } from "@/lib/features/cartSlice";
+import { getCartAPI } from "@/lib/features/ui/cartSlice";
 import { usePathname, useRouter } from "next/navigation";
 // IMPORT HOOK GỌI API
 import { useGetProductsQuery } from "@/services/productApi";
+import VerifyEmail from "@/components/auth/VerifyEmail";
 
 const useIsomorphicLayoutEffect = typeof window !== 'undefined' ? useLayoutEffect : useEffect;
 
@@ -41,8 +42,8 @@ const Header = () => {
     // State cho Mobile Menu
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
-    const { isLoginModalOpen, isRegisterModalOpen } = useSelector((state: RootState) => state.ui);
-    const isAnyFormOpen = isLoginModalOpen || isRegisterModalOpen;
+    const { isLoginModalOpen, isRegisterModalOpen, isVerifyModalOpen } = useSelector((state: RootState) => state.ui);
+    const isAnyFormOpen = isLoginModalOpen || isRegisterModalOpen || isVerifyModalOpen;
 
     const { data: session, status } = useSession();
     const dispatch = useDispatch<AppDispatch>();
@@ -56,7 +57,7 @@ const Header = () => {
     const isAdmin = userRole === 'MANAGER' || userRole === 'STAFF' || userRole === 'ADMIN';
 
     // GỌI API LẤY DATA CHO MEGA MENU
-    const { data: latestProductsResponse } = useGetProductsQuery({
+    const { data: latestProductsResponse, isLoading: isLatestProductsLoading } = useGetProductsQuery({
         page: 1,
         items_per_page: 6,
         orderBy: 'createdAt',
@@ -131,26 +132,42 @@ const Header = () => {
                                 </span>
 
                                 <div className="fixed top-[100px] left-1/2 -translate-x-1/2 w-[90vw] max-w-[1200px] bg-white shadow-lg p-6 rounded-lg opacity-0 translate-y-4 invisible group-hover:opacity-100 group-hover:translate-y-0 group-hover:visible transition-all duration-500 ease-out z-50">
-                                    <div className="grid grid-cols-6 text-center gap-2">
-                                        {latestProducts.map((item, idx) => (
-                                            <Link href={`/shop/${item.id}`} key={idx}>
-                                                <div className="flex flex-col items-center cursor-pointer group transition-transform duration-300 hover:scale-105">
-                                                    <div className="w-full relative aspect-[3/4] overflow-hidden bg-gray-100 rounded-md">
-                                                        <Image
-                                                            src={item.thumbnail && item.thumbnail.trim() !== "" ? item.thumbnail : "/images/placeholder.png"}
-                                                            alt={item.name || "Hình ảnh sản phẩm"}
-                                                            fill
-                                                            sizes="(max-width: 1200px) 16vw"
-                                                            className="object-cover transition-transform duration-500 ease-in-out group-hover/item:scale-110"
-                                                        />
+                                    {/* 👇 HIỂN THỊ LOADING NẾU ĐANG GỌI API */}
+                                    {isLatestProductsLoading ? (
+                                        <div className="flex flex-col items-center justify-center py-10 w-full">
+                                            <div className="w-8 h-8 border-4 border-gray-200 border-t-[#C19D56] rounded-full animate-spin mb-3"></div>
+                                            <p className="text-[#555555] font-dm-sans font-medium animate-pulse">
+                                                Đang cập nhật món mới...
+                                            </p>
+                                        </div>
+                                    ) : latestProducts.length > 0 ? (
+                                        /* 👇 HIỂN THỊ SẢN PHẨM NẾU CÓ DATA */
+                                        <div className="grid grid-cols-6 text-center gap-2">
+                                            {latestProducts.map((item: any, idx: number) => (
+                                                <Link href={`/shop/${item.id}`} key={idx}>
+                                                    <div className="flex flex-col items-center cursor-pointer group transition-transform duration-300 hover:scale-105">
+                                                        <div className="w-full relative aspect-[3/4] overflow-hidden bg-gray-100 rounded-md">
+                                                            <Image
+                                                                src={item.thumbnail && item.thumbnail.trim() !== "" ? item.thumbnail : "/images/placeholder.png"}
+                                                                alt={item.name || "Hình ảnh sản phẩm"}
+                                                                fill
+                                                                sizes="(max-width: 1200px) 16vw"
+                                                                className="object-cover transition-transform duration-500 ease-in-out group-hover/item:scale-110"
+                                                            />
+                                                        </div>
+                                                        <span className="mt-2 text-black font-semibold transition-colors group-hover:text-[#C19D56] line-clamp-1">
+                                                            {item.name}
+                                                        </span>
                                                     </div>
-                                                    <span className="mt-2 text-black font-semibold transition-colors group-hover:text-[#C19D56] line-clamp-1">
-                                                        {item.name}
-                                                    </span>
-                                                </div>
-                                            </Link>
-                                        ))}
-                                    </div>
+                                                </Link>
+                                            ))}
+                                        </div>
+                                    ) : (
+                                        /* 👇 HIỂN THỊ NẾU API THÀNH CÔNG NHƯNG MẢNG RỖNG (Không có sản phẩm nào) */
+                                        <div className="text-center py-10 text-gray-500 font-dm-sans">
+                                            Hiện tại chưa có sản phẩm mới nào.
+                                        </div>
+                                    )}
                                 </div>
                             </li>
 
@@ -339,7 +356,7 @@ const Header = () => {
                     </div>
                 </div>
             </header>
-            
+
             <div
                 className={`fixed inset-0 z-50 ${isAnyFormOpen ? "pointer-events-auto" : "pointer-events-none"}`}
             >
@@ -361,6 +378,7 @@ const Header = () => {
                     setOpenFormRegister={(isOpen) => isOpen ? dispatch(openRegisterModal()) : dispatch(closeRegisterModal())}
                     onSwitchToLogin={() => dispatch(openLoginModal())}
                 />
+                <VerifyEmail />
             </div>
             <Profile />
         </>

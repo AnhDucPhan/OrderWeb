@@ -6,7 +6,7 @@ import Link from 'next/link';
 import { CheckCircleFilled, CloseCircleFilled, LoadingOutlined } from '@ant-design/icons';
 import { useDispatch } from 'react-redux';
 import { AppDispatch } from '@/lib/store';
-import { getCartAPI } from '@/lib/features/cartSlice';
+import { getCartAPI } from '@/lib/features/ui/cartSlice';
 import { useSession } from 'next-auth/react';
 
 const PaymentResultPage = () => {

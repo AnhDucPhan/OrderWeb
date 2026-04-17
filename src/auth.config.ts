@@ -1,11 +1,12 @@
 import type { NextAuthConfig } from "next-auth";
 import Credentials from "next-auth/providers/credentials";
 import Google from "next-auth/providers/google";
+import { jwtDecode } from "jwt-decode";
 
 export const authConfig = {
   // 👇 1. THÊM DÒNG NÀY: Chìa khóa vạn năng cho Vercel Deployment
-  trustHost: true, 
-  
+  trustHost: true,
+
   providers: [
     Google({
       // 👇 2. ÉP KIỂU CHUỖI ĐỂ NEXTAUTH KHÔNG BÁO LỖI UNDEFINED
@@ -54,7 +55,7 @@ export const authConfig = {
           return null;
         } catch (error) {
           console.error("Authorize Error:", error);
-          return null; 
+          return null;
         }
       },
     }),
@@ -66,6 +67,8 @@ export const authConfig = {
           token.accessToken = (user as any).accessToken;
           token.role = (user as any).role;
           token.id = (user as any).id;
+          const decoded = jwtDecode(user.accessToken as string);
+          token.accessTokenExpires = decoded.exp ? decoded.exp * 1000 : 0;
         } else if (account.provider === "google") {
           try {
             const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/google`, {
@@ -79,11 +82,13 @@ export const authConfig = {
             });
 
             const data = await res.json();
-            
+
             if (res.ok && data.access_token) {
               token.accessToken = data.access_token;
               token.role = data.user.role;
               token.id = data.user.id;
+              const decoded = jwtDecode(data.access_token);
+              token.accessTokenExpires = decoded.exp ? decoded.exp * 1000 : 0;
             } else {
               console.error("Lỗi đồng bộ Google auth với BE:", data);
             }
@@ -92,19 +97,27 @@ export const authConfig = {
           }
         }
       }
+      if (token.accessTokenExpires) {
+        if (Date.now() >= (token.accessTokenExpires as number)) {
+          token.isExpired = true; // Đánh dấu là đã hết hạn!
+        } else {
+          token.isExpired = false;
+        }
+      }
       return token;
     },
-    
+
     async session({ session, token }) {
       if (token) {
         session.user.id = token.id as string;
         session.user.role = token.role as string;
-        (session as any).accessToken = token.accessToken as string; 
+        (session as any).accessToken = token.accessToken as string;
+        (session as any).isExpired = token.isExpired;
       }
       return session;
     },
   },
   pages: {
-    signIn: "/login", 
+    signIn: "/login",
   },
 } satisfies NextAuthConfig;

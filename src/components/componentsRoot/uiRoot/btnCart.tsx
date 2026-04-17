@@ -4,7 +4,7 @@ import { Drawer, Button, ConfigProvider, Badge } from 'antd';
 import { MdAddShoppingCart } from "react-icons/md";
 import { useDispatch, useSelector } from 'react-redux';
 import { AppDispatch, RootState } from '@/lib/store';
-import { getCartAPI } from '@/lib/features/cartSlice';
+import { getCartAPI } from '@/lib/features/ui/cartSlice';
 import { useRouter } from 'next/navigation';
 
 const CartDrawer = () => {

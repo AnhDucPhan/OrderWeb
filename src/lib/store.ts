@@ -1,6 +1,6 @@
 import { configureStore } from '@reduxjs/toolkit';
 import uiReducer from './features/ui/uiSlice';
-import cartReducer from './features/cartSlice';
+import cartReducer from './features/ui/cartSlice';
 import { userApi } from '@/services/userApi';
 import { scheduleApi } from '@/services/scheduleApi';
 import { notificationApi } from '@/services/notificationApi';

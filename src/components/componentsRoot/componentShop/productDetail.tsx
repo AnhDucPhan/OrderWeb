@@ -8,7 +8,7 @@ import { useParams, useRouter } from 'next/navigation';
 import { Search, Loader2 } from 'lucide-react';
 import { useDispatch } from 'react-redux';
 import { AppDispatch } from '@/lib/store';
-import { addToCartAPI } from '@/lib/features/cartSlice';
+import { addToCartAPI } from '@/lib/features/ui/cartSlice';
 import { openLoginModal } from '@/lib/features/ui/uiSlice';
 import { useSession } from 'next-auth/react';
 import { message } from 'antd';
@@ -16,7 +16,7 @@ import { message } from 'antd';
 import { useGetOneProductQuery, Product } from '@/services/productApi';
 
 const ProductDetailComp = () => {
-    const { id } = useParams<{ id: string }>(); 
+    const { id } = useParams<{ id: string }>();
     // 👇 Khởi tạo router
     const router = useRouter();
     const dispatch = useDispatch<AppDispatch>();
@@ -26,7 +26,7 @@ const ProductDetailComp = () => {
     const [activeTab, setActiveTab] = useState<'description' | 'additional' | 'reviews'>('description');
 
     const { data: responseData, isLoading, isError } = useGetOneProductQuery(Number(id), {
-        skip: !id, 
+        skip: !id,
     });
 
     const product = (responseData as any)?.data || responseData as Product | undefined;
@@ -39,7 +39,7 @@ const ProductDetailComp = () => {
     // Hàm Thêm vào giỏ hàng
     const handleAddToCart = () => {
         if (!product) return;
-        
+
         if (!session) {
             message.warning('Vui lòng đăng nhập để thêm sản phẩm vào giỏ hàng!');
             dispatch(openLoginModal());
@@ -62,7 +62,7 @@ const ProductDetailComp = () => {
     // 👇 Hàm Mua Ngay (Bỏ qua giỏ hàng -> Sang thẳng trang thanh toán)
     const handleBuyNow = () => {
         if (!product) return;
-        
+
         if (!session) {
             message.warning('Vui lòng đăng nhập để mua hàng!');
             dispatch(openLoginModal());
@@ -71,7 +71,7 @@ const ProductDetailComp = () => {
 
         // 1. Tạo 1 object giả lập giống cấu trúc CartItem để trang Checkout dễ đọc
         const buyNowData = {
-            id: 'buynow_item', 
+            id: 'buynow_item',
             productId: product.id,
             quantity: quantity,
             product: product // Chứa sẵn name, price, thumbnail... để hiện thị ra bảng
@@ -117,19 +117,19 @@ const ProductDetailComp = () => {
 
             {/* Main Product Section */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-10 lg:gap-16">
-                
+
                 {/* Left: Product Image */}
                 <div className="relative border border-[#C19D56] aspect-square flex items-center justify-center p-8 bg-white group">
                     <button className="absolute top-4 right-4 bg-white p-2 rounded-full shadow-sm border border-stone-100 hover:bg-stone-50 transition-colors z-10 text-stone-600">
                         <Search size={18} />
                     </button>
-                    
+
                     <div className="relative w-full h-full">
                         <Image
-                            src={product.thumbnail && product.thumbnail.trim() !== "" ? product.thumbnail : "/images/placeholder.png"} 
+                            src={product.thumbnail && product.thumbnail.trim() !== "" ? product.thumbnail : "/images/placeholder.png"}
                             alt={product.name}
                             fill
-                            className="object-contain drop-shadow-xl transition-transform duration-500 group-hover:scale-105" 
+                            className="object-contain drop-shadow-xl transition-transform duration-500 group-hover:scale-105"
                         />
                     </div>
                 </div>
@@ -165,13 +165,13 @@ const ProductDetailComp = () => {
 
                         {/* Dòng 2: 2 Nút Add to Cart và Buy Now */}
                         <div className="flex flex-col sm:flex-row gap-4">
-                            <button 
+                            <button
                                 onClick={handleAddToCart}
                                 className="flex-1 h-12 border-2 border-[#C19D56] text-[#C19D56] hover:bg-[#C19D56] hover:text-white font-bold text-sm tracking-wider transition-all duration-300 uppercase"
                             >
                                 Thêm vào giỏ hàng
                             </button>
-                            <button 
+                            <button
                                 onClick={handleBuyNow}
                                 className="flex-1 h-12 bg-[#111111] hover:bg-[#C19D56] text-white! font-bold text-sm tracking-wider transition-all duration-300 shadow-md hover:shadow-lg uppercase"
                             >
@@ -183,11 +183,11 @@ const ProductDetailComp = () => {
                     {/* Meta Data */}
                     <div className="text-sm space-y-2 text-stone-500">
                         <p>
-                            <span className="text-stone-900 font-bold mr-1">SKU:</span> 
+                            <span className="text-stone-900 font-bold mr-1">SKU:</span>
                             SP-{product.id.toString().padStart(5, '0')}
                         </p>
                         <p>
-                            <span className="text-stone-900 font-bold mr-1">Category:</span> 
+                            <span className="text-stone-900 font-bold mr-1">Category:</span>
                             <Link href="/shop" className="hover:text-[#C19D56] transition-colors">
                                 {product.productCategory?.name || 'Uncategorized'}
                             </Link>
@@ -200,33 +200,30 @@ const ProductDetailComp = () => {
             <div className="mt-16 sm:mt-24">
                 {/* Tab Headers */}
                 <div className="flex flex-wrap gap-1 border-b border-[#C19D56]">
-                    <button 
+                    <button
                         onClick={() => setActiveTab('description')}
-                        className={`px-8 py-3.5 text-sm font-bold transition-colors ${
-                            activeTab === 'description' 
-                            ? 'bg-[#86624A] text-white' 
-                            : 'bg-[#C19D56] text-white hover:bg-[#86624A]/90'
-                        }`}
+                        className={`px-8 py-3.5 text-sm font-bold transition-colors ${activeTab === 'description'
+                                ? 'bg-[#86624A] text-white'
+                                : 'bg-[#C19D56] text-white hover:bg-[#86624A]/90'
+                            }`}
                     >
                         Description
                     </button>
-                    <button 
+                    <button
                         onClick={() => setActiveTab('additional')}
-                        className={`px-8 py-3.5 text-sm font-bold transition-colors ${
-                            activeTab === 'additional' 
-                            ? 'bg-[#86624A] text-white' 
-                            : 'bg-[#C19D56] text-white hover:bg-[#86624A]/90'
-                        }`}
+                        className={`px-8 py-3.5 text-sm font-bold transition-colors ${activeTab === 'additional'
+                                ? 'bg-[#86624A] text-white'
+                                : 'bg-[#C19D56] text-white hover:bg-[#86624A]/90'
+                            }`}
                     >
                         Additional information
                     </button>
-                    <button 
+                    <button
                         onClick={() => setActiveTab('reviews')}
-                        className={`px-8 py-3.5 text-sm font-bold transition-colors ${
-                            activeTab === 'reviews' 
-                            ? 'bg-[#86624A] text-white' 
-                            : 'bg-[#C19D56] text-white hover:bg-[#86624A]/90'
-                        }`}
+                        className={`px-8 py-3.5 text-sm font-bold transition-colors ${activeTab === 'reviews'
+                                ? 'bg-[#86624A] text-white'
+                                : 'bg-[#C19D56] text-white hover:bg-[#86624A]/90'
+                            }`}
                     >
                         Reviews (0)
                     </button>

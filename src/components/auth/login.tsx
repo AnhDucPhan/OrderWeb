@@ -4,11 +4,12 @@ import Image from "next/image";
 import { FaRegEye } from "react-icons/fa";
 import { IoIosEyeOff } from "react-icons/io";
 import { FaArrowLeftLong } from "react-icons/fa6";
-// 👇 1. Import thêm icon Google
 import { FcGoogle } from "react-icons/fc"; 
 import { useState, Dispatch, SetStateAction } from "react";
 import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
+import { useDispatch } from "react-redux";
+import { openVerifyModal } from "@/lib/features/ui/uiSlice";
 
 interface LoginProps {
     openFormLogin: boolean;
@@ -17,6 +18,7 @@ interface LoginProps {
 }
 
 const Login = ({ openFormLogin, setOpenFormLogin, onSwitchToRegister }: LoginProps) => {
+    const dispatch = useDispatch();
 
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
@@ -36,12 +38,12 @@ const Login = ({ openFormLogin, setOpenFormLogin, onSwitchToRegister }: LoginPro
             const res = await signIn('credentials', {
                 email: email,
                 password: password,
-                redirect: false,
+                redirect: false, // Ngăn NextAuth tự chuyển trang để mình tự xử lý
             });
-            console.log("Cục data Login Backend trả về:", res);
 
             if (res?.error) {
-                setErrorMsg("Email hoặc mật khẩu không chính xác!");
+                // 👇 HIỂN THỊ ĐÚNG LỖI TỪ BACKEND GỬI LÊN (Sai pass, bị khóa, hoặc chưa xác thực)
+                setErrorMsg(res.error);
             } else {
                 setOpenFormLogin(false);
                 router.refresh();
@@ -53,9 +55,13 @@ const Login = ({ openFormLogin, setOpenFormLogin, onSwitchToRegister }: LoginPro
         }
     }
 
+    // 👇 Hàm tiện ích: Chuyển hướng user sang file OTP khi họ bấm vào link
+    const handleGoToVerify = () => {
+        dispatch(openVerifyModal(email));
+    };
+
     return (
         <>
-            {/* Lớp phủ mờ (Overlay) */}
             {openFormLogin && (
                 <div
                     className="fixed inset-0 bg-black/50 z-40 transition-opacity"
@@ -65,20 +71,14 @@ const Login = ({ openFormLogin, setOpenFormLogin, onSwitchToRegister }: LoginPro
 
             <div
                 className={`fixed top-0 right-0 h-full w-[90%] max-w-[500px] bg-white z-50 p-12 shadow-2xl
-                transition-transform duration-300 ease-out overflow-y-auto
+                transition-transform duration-300 ease-out overflow-y-auto custom-scrollbar
                 ${openFormLogin ? "translate-x-0" : "translate-x-full"}
                 `}
             >
                 <div className="flex flex-col min-h-full text-black">
-                    {/* Header: Nút đóng */}
                     <div className="flex items-center justify-between mb-8">
                         <div className="relative aspect-[487/120] w-[140px] sm:w-[170px]">
-                            <Image
-                                src="/images/dark-logo.png"
-                                alt="logo"
-                                fill
-                                className="object-contain"
-                            />
+                            <Image src="/images/dark-logo.png" alt="logo" fill className="object-contain" />
                         </div>
 
                         <button
@@ -89,28 +89,43 @@ const Login = ({ openFormLogin, setOpenFormLogin, onSwitchToRegister }: LoginPro
                         </button>
                     </div>
 
-                    {/* Form Content */}
                     <div className="flex-1 flex flex-col justify-center">
                         <form className="space-y-6" onSubmit={handleLogin}>
                             <div className="space-y-1">
                                 <h2 className="flex justify-center text-4xl font-semibold">Welcome Back</h2>
-                                {errorMsg && <p className="text-red-500 text-center text-sm">{errorMsg}</p>}
+                                
+                                {/* Khu vực báo lỗi */}
+                                {errorMsg && (
+                                    <div className="text-center mt-2 bg-red-50 py-2 rounded-lg border border-red-100">
+                                        <p className="text-red-500 text-sm font-medium">{errorMsg}</p>
+                                        
+                                        {/* 👇 HIỆN NÚT ĐI TỚI TRANG OTP NẾU CHƯA XÁC THỰC */}
+                                        {errorMsg.includes('xác thực') && (
+                                            <button 
+                                                type="button" 
+                                                onClick={handleGoToVerify}
+                                                className="mt-1 text-[#C19D56] text-xs font-bold hover:underline"
+                                            >
+                                                Nhấn vào đây để nhập mã xác thực
+                                            </button>
+                                        )}
+                                    </div>
+                                )}
                             </div>
 
-                            {/* Email Input */}
                             <div className="flex flex-col gap-1">
-                                <label className="text-sm font-medium text-gray-700">Số Điện Thoại</label>
+                                {/* 👇 ĐÃ SỬA LẠI THÀNH EMAIL */}
+                                <label className="text-sm font-medium text-gray-700">Email</label>
                                 <input
                                     type="email"
                                     value={email}
                                     onChange={(e) => setEmail(e.target.value)}
-                                    placeholder="0987164306"
+                                    placeholder="example@email.com"
                                     required
                                     className="w-full rounded-lg border border-gray-300 px-4 py-2.5 outline-none focus:ring-2 focus:ring-[#C19D56]"
                                 />
                             </div>
 
-                            {/* Password Input */}
                             <div className="flex flex-col gap-1">
                                 <label className="text-sm font-medium text-gray-700">Password</label>
                                 <div className="relative">
@@ -132,7 +147,6 @@ const Login = ({ openFormLogin, setOpenFormLogin, onSwitchToRegister }: LoginPro
                                 </div>
                             </div>
 
-                            {/* Submit Button */}
                             <button
                                 type="submit"
                                 disabled={isLoading}
@@ -144,7 +158,6 @@ const Login = ({ openFormLogin, setOpenFormLogin, onSwitchToRegister }: LoginPro
                             </button>
                         </form>
 
-                        {/* 👇 2. KHU VỰC THÊM MỚI: Dòng kẻ chữ OR và Nút Google */}
                         <div className="my-6 flex items-center justify-between">
                             <span className="w-1/5 border-b border-gray-300 lg:w-1/4"></span>
                             <span className="text-xs text-center text-gray-500 uppercase font-medium">
@@ -154,16 +167,14 @@ const Login = ({ openFormLogin, setOpenFormLogin, onSwitchToRegister }: LoginPro
                         </div>
 
                         <button
-                            type="button" // Bắt buộc là type="button" để không submit form
+                            type="button" 
                             onClick={() => signIn('google', { callbackUrl: '/' })}
                             className="w-full flex items-center justify-center gap-3 rounded-lg border border-gray-300 bg-white py-3 font-semibold text-gray-700 hover:bg-gray-50 transition-colors shadow-sm mb-6"
                         >
                             <FcGoogle size={24} />
                             Sign In with Google
                         </button>
-                        {/* 👆 KẾT THÚC KHU VỰC THÊM MỚI */}
 
-                        {/* Footer Link */}
                         <p className="text-center text-sm text-gray-600 mt-auto pt-4">
                             Don’t have an account?{' '}
                             <span

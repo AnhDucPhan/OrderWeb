@@ -6,7 +6,7 @@ import { ConfigProvider, InputNumber, Button, Divider, Input, Modal, message, Ch
 import { DeleteOutlined, ArrowLeftOutlined, ShoppingCartOutlined } from '@ant-design/icons';
 import { useSelector, useDispatch } from 'react-redux';
 import { AppDispatch, RootState } from '@/lib/store';
-import { removeCartItemAPI, updateQuantity } from '@/lib/features/cartSlice';
+import { removeCartItemAPI, updateQuantity } from '@/lib/features/ui/cartSlice';
 import { useRouter } from 'next/navigation';
 
 const CartComponent = () => {
@@ -88,7 +88,7 @@ const CartComponent = () => {
             message.warning('Vui lòng chọn ít nhất 1 sản phẩm để thanh toán!');
             return;
         }
-        
+
         // Lưu danh sách ID các món muốn mua vào sessionStorage để trang Checkout đọc
         sessionStorage.setItem('checkoutCartIds', JSON.stringify(selectedIds));
         router.push('/shop/checkout?mode=cart');
@@ -138,10 +138,10 @@ const CartComponent = () => {
                             {/* Tiêu đề bảng */}
                             <div className="hidden sm:grid grid-cols-12 gap-4 border-b border-gray-200 pb-4 text-sm font-bold text-gray-400 uppercase tracking-wider font-[DM_Sans]">
                                 <div className="col-span-6 flex items-center gap-3">
-                                    <Checkbox 
-                                        indeterminate={isIndeterminate} 
-                                        checked={isAllSelected} 
-                                        onChange={handleSelectAll} 
+                                    <Checkbox
+                                        indeterminate={isIndeterminate}
+                                        checked={isAllSelected}
+                                        onChange={handleSelectAll}
                                     />
                                     <span>Sản phẩm</span>
                                 </div>
@@ -153,11 +153,11 @@ const CartComponent = () => {
                             <div className="flex flex-col gap-6 mt-6">
                                 {cartItems.map((item) => (
                                     <div key={item.id} className="group relative bg-white border border-gray-100 p-4 rounded-lg sm:border-0 sm:bg-transparent sm:p-0 sm:rounded-none flex flex-col sm:grid sm:grid-cols-12 gap-4 items-center shadow-sm sm:shadow-none">
-                                        
+
                                         <div className="relative col-span-6 flex gap-4 w-full items-center">
                                             {/* Checkbox trên Mobile sẽ đặt góc trên trái, Desktop thì căn giữa */}
                                             <div className="absolute top-4 left-4 sm:static sm:flex items-center z-10">
-                                                <Checkbox 
+                                                <Checkbox
                                                     checked={selectedIds.includes(item.id)}
                                                     onChange={(e) => handleSelectItem(item.id, e.target.checked)}
                                                 />

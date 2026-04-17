@@ -1,10 +1,12 @@
-import { createSlice } from '@reduxjs/toolkit';
+import { createSlice, PayloadAction } from '@reduxjs/toolkit';
 
 // 1. Khai báo kiểu dữ liệu cho toàn bộ UI State
 interface UiState {
   isProfileOpen: boolean;
   isLoginModalOpen: boolean;
   isRegisterModalOpen: boolean;
+  isVerifyModalOpen: boolean;
+  emailToVerify: string;
 }
 
 // 2. Khởi tạo giá trị mặc định (Tất cả đều đóng)
@@ -12,6 +14,8 @@ const initialState: UiState = {
   isProfileOpen: false,
   isLoginModalOpen: false,
   isRegisterModalOpen: false,
+  isVerifyModalOpen: false,
+  emailToVerify: '',
 };
 
 export const uiSlice = createSlice({
@@ -24,7 +28,7 @@ export const uiSlice = createSlice({
     openProfile: (state) => {
       state.isProfileOpen = true;
       // Đảm bảo đóng các form xác thực nếu đang mở
-      state.isLoginModalOpen = false; 
+      state.isLoginModalOpen = false;
       state.isRegisterModalOpen = false;
     },
     closeProfile: (state) => {
@@ -37,7 +41,7 @@ export const uiSlice = createSlice({
     openLoginModal: (state) => {
       state.isLoginModalOpen = true;
       // Đóng form đăng ký và profile
-      state.isRegisterModalOpen = false; 
+      state.isRegisterModalOpen = false;
       state.isProfileOpen = false;
     },
     closeLoginModal: (state) => {
@@ -50,7 +54,7 @@ export const uiSlice = createSlice({
     openRegisterModal: (state) => {
       state.isRegisterModalOpen = true;
       // Đóng form đăng nhập và profile
-      state.isLoginModalOpen = false; 
+      state.isLoginModalOpen = false;
       state.isProfileOpen = false;
     },
     closeRegisterModal: (state) => {
@@ -63,20 +67,35 @@ export const uiSlice = createSlice({
     closeAllAuthModals: (state) => {
       state.isLoginModalOpen = false;
       state.isRegisterModalOpen = false;
+      state.isVerifyModalOpen = false; // Thêm dòng này
+
       // Tuỳ chọn: Có thể thêm state.isProfileOpen = false vào đây nếu muốn click ra ngoài là đóng cả profile
-    }
+    },
+
+    openVerifyModal: (state, action: PayloadAction<string>) => {
+      state.isVerifyModalOpen = true;
+      state.emailToVerify = action.payload; // Nhận email từ form Đăng ký truyền sang
+      // Tự động đóng các form khác
+      state.isLoginModalOpen = false;
+      state.isRegisterModalOpen = false;
+    },
+    closeVerifyModal: (state) => {
+      state.isVerifyModalOpen = false;
+      state.emailToVerify = '';
+    },
   },
 });
 
 // 3. Export các actions để Component sử dụng (`dispatch(openLoginModal())`)
-export const { 
-  openProfile, 
-  closeProfile, 
-  openLoginModal, 
-  closeLoginModal, 
-  openRegisterModal, 
-  closeRegisterModal, 
-  closeAllAuthModals 
+export const {
+  openProfile,
+  closeProfile,
+  openLoginModal,
+  closeLoginModal,
+  openRegisterModal,
+  closeRegisterModal,
+  closeAllAuthModals,
+  openVerifyModal, closeVerifyModal,
 } = uiSlice.actions;
 
 // 4. Export reducer để gắn vào file store.ts

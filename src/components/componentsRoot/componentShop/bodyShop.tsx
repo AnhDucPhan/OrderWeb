@@ -1,5 +1,5 @@
 'use client'
-import { addToCartAPI } from '@/lib/features/cartSlice';
+import { addToCartAPI } from '@/lib/features/ui/cartSlice';
 import { openLoginModal } from '@/lib/features/ui/uiSlice';
 import { AppDispatch } from '@/lib/store';
 import { ConfigProvider, message } from 'antd';
