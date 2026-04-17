@@ -147,7 +147,7 @@ const BodyShop = ({ initialProducts, categories, meta, bestSellers }: BodyShopPr
                             </div>
 
                             {/* Product Tags */}
-                            <div className='border border-gray-200 rounded-2xl p-5 bg-white shadow-sm'>
+                            {/* <div className='border border-gray-200 rounded-2xl p-5 bg-white shadow-sm'>
                                 <h3 className="relative pl-5 text-[#111111] text-xl sm:text-2xl mb-4 font-semibold before:content-[''] before:absolute before:top-1/2 before:left-0 before:-translate-y-1/2 before:w-[8px] before:h-[8px] before:rounded-full before:bg-[#C19D56]">
                                     Tags
                                 </h3>
@@ -158,7 +158,7 @@ const BodyShop = ({ initialProducts, categories, meta, bestSellers }: BodyShopPr
                                         </a>
                                     ))}
                                 </div>
-                            </div>
+                            </div> */}
 
                             {/* Sidebar Products List */}
                             <div className='border border-gray-200 rounded-2xl p-5 bg-white shadow-sm'>

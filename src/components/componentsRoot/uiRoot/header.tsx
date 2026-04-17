@@ -175,7 +175,7 @@ const Header = () => {
                             <li className="header-center relative group flex items-center gap-1 cursor-pointer">
                                 <Link href='/shop'>
                                     <span className={`hover:text-[#C19D56] transition-colors ${scrolled ? "text-[#0B0B24]" : "text-white"}`}>
-                                        Cửa Hàng
+                                        Menu
                                     </span>
                                 </Link>
                                 <IoIosArrowDown className={`${scrolled ? "text-[#0B0B24]" : "text-white"}`} />
@@ -183,7 +183,6 @@ const Header = () => {
                                 <div className="absolute top-full left-1/2 -translate-x-1/4 mt-2 w-56 bg-white shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300">
                                     <ul className="flex flex-col p-4 gap-3 text-left">
                                         <Link href='/shop/cart'><li className="color-text-header hover:text-[#C19D56] transition-colors">Giỏ Hàng</li></Link>
-                                        <Link href='/shop/checkout'><li className="color-text-header hover:text-[#C19D56] transition-colors">Thanh Toán</li></Link>
                                         <Link href='/shop/order'><li className="color-text-header hover:text-[#C19D56] transition-colors">Đơn Hàng Của Tôi</li></Link>
                                     </ul>
                                 </div>
@@ -191,10 +190,11 @@ const Header = () => {
 
                             {/* ITEM: BỘ SƯU TẬP (Portfolio) */}
                             <li className="header-center relative group">
-                                <span className={`flex items-center gap-1 hover:text-[#C19D56] transition-colors ${scrolled ? "text-[#0B0B24]" : "text-white"}`}>
-                                    Bộ Sưu Tập <IoIosArrowDown />
-                                </span>
-                                <div className="absolute top-full left-1/2 -translate-x-1/4 mt-2 w-64 bg-white shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300">
+                                <Link href='/port'>
+                                    <span className={`flex items-center gap-1 hover:text-[#C19D56] transition-colors ${scrolled ? "text-[#0B0B24]" : "text-white"}`}>
+                                        Bộ Sưu Tập
+                                    </span></Link>
+                                {/* <div className="absolute top-full left-1/2 -translate-x-1/4 mt-2 w-64 bg-white shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300">
                                     <ul className="flex flex-col p-4 gap-2 pl-6 text-left">
                                         <li className="color-text-header">Bảng Đánh Giá</li>
                                         <li className="color-text-header relative group/shop flex items-center justify-between cursor-pointer">
@@ -211,7 +211,7 @@ const Header = () => {
                                         </li>
                                         <li className="color-text-header">Chi Tiết</li>
                                     </ul>
-                                </div>
+                                </div> */}
                             </li>
 
                             {/* ITEM: DỊCH VỤ */}

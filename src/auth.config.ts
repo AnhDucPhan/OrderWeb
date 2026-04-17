@@ -28,10 +28,14 @@ export const authConfig = {
         password: { label: "Password", type: "password" },
       },
       authorize: async (credentials) => {
+        const apiUrl = `${process.env.NEXT_PUBLIC_API_URL}/auth/login`;
+        console.log("👉 [NEXTAUTH] Đang gửi yêu cầu tới:", apiUrl);
+        console.log("👉 [NEXTAUTH] Dữ liệu gửi đi:", credentials?.email);
+        
         if (!credentials?.email || !credentials?.password) return null;
 
         try {
-          const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/login`, {
+          const res = await fetch(apiUrl, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
@@ -40,8 +44,22 @@ export const authConfig = {
             }),
           });
 
-          const data = await res.json();
+          console.log("👉 [NEXTAUTH] Mã trạng thái (Status):", res.status);
 
+          // 1. Chỉ đọc text 1 lần duy nhất
+          const textData = await res.text();
+          console.log("👉 [NEXTAUTH] Dữ liệu thô từ BE:", textData);
+
+          // 2. Chuyển Text thành JSON thủ công để tránh lỗi sập ngầm
+          let data;
+          try {
+            data = JSON.parse(textData);
+          } catch (err) {
+            console.error("🚨 [NEXTAUTH] Lỗi Parse JSON! Nội dung nhận được:", textData);
+            throw new Error("Lỗi máy chủ: Phản hồi không hợp lệ");
+          }
+
+          // 3. Xử lý lỗi từ Backend
           if (!res.ok) {
             throw new Error(data?.message || "Đăng nhập thất bại");
           }
@@ -53,9 +71,10 @@ export const authConfig = {
             };
           }
           return null;
-        } catch (error) {
-          console.error("Authorize Error:", error);
-          return null;
+        } catch (error: any) {
+          console.error("🚨 Authorize Error:", error.message);
+          // BẮT BUỘC PHẢI THROW LỖI ĐỂ FRONTEND NHẬN ĐƯỢC THÔNG BÁO
+          throw new Error(error.message);
         }
       },
     }),
