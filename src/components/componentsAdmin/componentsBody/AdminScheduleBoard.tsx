@@ -119,7 +119,7 @@ export default function AdminScheduleBoard() {
 
 
   const currentUser = session?.user;
-  const isManager = currentUser?.role === 'MANAGER' || currentUser?.position === 'Store Manager';
+  const isManager = (currentUser?.role && ['MANAGER', 'ADMIN'].includes(currentUser.role)) || currentUser?.position === 'Store Manager';
   const users = usersData || [];
 
   const [publishSchedules, { isLoading: isPublishing }] = usePublishSchedulesMutation();

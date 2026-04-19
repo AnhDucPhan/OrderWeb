@@ -158,7 +158,7 @@ const EditUserModal = ({ user, open, onClose }: EditProps) => {
                         <DialogFooter>
                             <Button className="text-white bg-blue-600 hover:bg-blue-700" type="submit" disabled={isLoading}>
                                 {isLoading ? <Loader2 className="animate-spin mr-2 h-4 w-4" /> : null}
-                                Duyệt ca
+                                Xác Nhận
                             </Button>
                         </DialogFooter>
                     </form>

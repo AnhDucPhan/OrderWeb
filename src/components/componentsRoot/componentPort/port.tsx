@@ -7,11 +7,11 @@ import { FaQuoteLeft, FaCheckCircle } from 'react-icons/fa';
 export default function PortfolioComp() {
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 font-[DM_Sans] text-gray-700">
-      
+
       {/* ================= 1. HERO IMAGE ================= */}
       <div className="w-full relative h-[300px] md:h-[500px] rounded-2xl overflow-hidden mb-12 shadow-lg">
-        <Image 
-          src="/images/coffee-shop-interior.jpg" // Đổi lại thành đường dẫn ảnh thật của bạn
+        <Image
+          src="/images/CF-store.jpg" // Đổi lại thành đường dẫn ảnh thật của bạn
           alt="Coffee Shop Interior"
           fill
           className="object-cover"
@@ -21,23 +21,23 @@ export default function PortfolioComp() {
       {/* ================= 2. META INFO BAR ================= */}
       <div className="flex flex-wrap justify-between items-center border-b border-gray-200 pb-6 mb-12 gap-4 text-sm">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-full bg-[#f9f6f0] flex items-center justify-center text-[#C19D56]"><FaRegClock size={18}/></div>
+          <div className="w-10 h-10 rounded-full bg-[#f9f6f0] flex items-center justify-center text-[#C19D56]"><FaRegClock size={18} /></div>
           <div><p className="text-gray-400 text-xs">Date:</p><p className="font-medium text-gray-900">January 10, 2026</p></div>
         </div>
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-full bg-[#f9f6f0] flex items-center justify-center text-[#C19D56]"><FaRegUser size={18}/></div>
+          <div className="w-10 h-10 rounded-full bg-[#f9f6f0] flex items-center justify-center text-[#C19D56]"><FaRegUser size={18} /></div>
           <div><p className="text-gray-400 text-xs">Client:</p><p className="font-medium text-gray-900">Samira & Rufus</p></div>
         </div>
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-full bg-[#f9f6f0] flex items-center justify-center text-[#C19D56]"><FaRegFolderOpen size={18}/></div>
+          <div className="w-10 h-10 rounded-full bg-[#f9f6f0] flex items-center justify-center text-[#C19D56]"><FaRegFolderOpen size={18} /></div>
           <div><p className="text-gray-400 text-xs">Category:</p><p className="font-medium text-gray-900">Clean World</p></div>
         </div>
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-full bg-[#f9f6f0] flex items-center justify-center text-[#C19D56]"><FaMapMarkerAlt size={18}/></div>
+          <div className="w-10 h-10 rounded-full bg-[#f9f6f0] flex items-center justify-center text-[#C19D56]"><FaMapMarkerAlt size={18} /></div>
           <div><p className="text-gray-400 text-xs">Place:</p><p className="font-medium text-gray-900">Morgue Street, UK</p></div>
         </div>
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-full bg-[#f9f6f0] flex items-center justify-center text-[#C19D56]"><FaBell size={18}/></div>
+          <div className="w-10 h-10 rounded-full bg-[#f9f6f0] flex items-center justify-center text-[#C19D56]"><FaBell size={18} /></div>
           <div><p className="text-gray-400 text-xs">Service:</p><p className="font-medium text-gray-900">Clean Save Nature</p></div>
         </div>
       </div>
@@ -88,13 +88,29 @@ export default function PortfolioComp() {
 
       {/* ================= 5. BOTTOM SECTION (IMAGE + TEXT) ================= */}
       <div className="flex flex-col md:flex-row gap-12 items-center">
-        <div className="w-full md:w-1/2 relative h-[400px] rounded-xl overflow-hidden shadow-md">
-          <Image 
-            src="/images/barista-working.jpg" // Đổi thành ảnh barista của bạn
-            alt="Barista"
-            fill
-            className="object-cover"
-          />
+        <div className="relative w-full max-w-sm h-[600px] mx-auto rounded-xl overflow-hidden shadow-lg">
+
+          {/* Lớp phủ mờ mờ (Overlay) để nếu bạn có viết chữ lên video thì chữ sẽ dễ đọc hơn */}
+          <div className="absolute inset-0 bg-black/20 z-10 pointer-events-none"></div>
+
+          {/* THẺ VIDEO CHÍNH */}
+          <video
+            src="/images/cefc027594a9f677821f7cf2985a008e.mp4" // 👉 Đường dẫn file .mp4 đặt trong thư mục public
+            autoPlay
+            loop
+            muted
+            playsInline
+            className="absolute inset-0 w-full h-full object-cover z-0"
+          >
+            Trình duyệt của bạn không hỗ trợ thẻ video.
+          </video>
+
+          {/* Nội dung đè lên video (Ví dụ) */}
+          <div className="absolute bottom-8 left-6 z-20 text-white">
+            <h3 className="text-3xl font-[Marcellus] mb-2">Artisan Coffee</h3>
+            <p className="text-sm font-[DM_Sans] opacity-90">Sự hoàn hảo trong từng giọt</p>
+          </div>
+
         </div>
         <div className="w-full md:w-1/2">
           <h2 className="text-3xl md:text-4xl font-[Marcellus] text-gray-900 mb-6">
@@ -103,7 +119,7 @@ export default function PortfolioComp() {
           <p className="text-gray-500 mb-8 leading-relaxed">
             The point of using Lorem Ipsum is that it has a more-or-less normal distribution of letters, as opposed to using 'Content here, content here', making it look like readable English.
           </p>
-          
+
           <ul className="space-y-4 mb-8">
             {[
               "Where Every Cup Tells a Story",
